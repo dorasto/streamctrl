@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "private": true,
+  "name": "streamctrl-frontend",
+  "private": false,
   "type": "module",
   "scripts": {
     "build": "react-router build",
