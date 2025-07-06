@@ -1,0 +1,27 @@
+name: Feature Request
+description: Suggest a new feature or improvement.
+labels: ["enhancement", "triage"]
+projects: ["dorasto/13"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: What type?
+      options:
+        - Backend
+        - Frontend
+        - Documentation
+        - Other/unsure
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Feature Details
+      description: Please describe the feature or improvement you are suggesting.
+      placeholder: Describe the feature in detail.
+      value: "A new feature would be great!"
+    validations:
+      required: true
