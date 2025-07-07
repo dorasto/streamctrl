@@ -18,6 +18,7 @@ body {
 }
 
 :root {
+  --header-height: 2.75rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.5418 0.0564 279.4073);
   --card: oklch(1 0 0);
@@ -53,7 +54,7 @@ body {
   --font-sans: Poppins, sans-serif;
   --font-serif: Open Sans, sans-serif;
   --font-mono: JetBrains Mono, monospace;
-  --radius: 1.25rem;
+  --radius: 0.625rem;
   --shadow-2xs: 0px 0px 15.5px 1px hsl(240 29.5455% 34.5098% / 0.17);
   --shadow-xs: 0px 0px 15.5px 1px hsl(240 29.5455% 34.5098% / 0.17);
   --shadow-sm: 0px 0px 15.5px 1px hsl(240 29.5455% 34.5098% / 0.35),
@@ -100,14 +101,14 @@ body {
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(1 0 0);
   --sidebar-primary-foreground: oklch(0.2914 0.0399 283.6505);
-  --sidebar-accent: oklch(1 0 0);
-  --sidebar-accent-foreground: oklch(0.2914 0.0399 283.6505);
+  --sidebar-accent: oklch(0.3565 0.0337 283.7726);
+  --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.5008 0.0413 281.3444);
   --sidebar-ring: oklch(1 0 0);
   --font-sans: Poppins, sans-serif;
   --font-serif: Open Sans, sans-serif;
   --font-mono: JetBrains Mono, monospace;
-  --radius: 1.25rem;
+  --radius: 0.625rem;
   --shadow-2xs: 0px 0px 15.5px 1px hsl(240 29.5455% 34.5098% / 0.17);
   --shadow-xs: 0px 0px 15.5px 1px hsl(240 29.5455% 34.5098% / 0.17);
   --shadow-sm: 0px 0px 15.5px 1px hsl(240 29.5455% 34.5098% / 0.35),
