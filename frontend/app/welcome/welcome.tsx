@@ -1,6 +1,7 @@
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { ArrowUpRight, Notebook } from "lucide-react";
+import Login from "~/components/base/login";
 
 export default function Welcome() {
   return (
@@ -19,9 +20,7 @@ export default function Welcome() {
           Your ultimate streaming companion app, deployed on your own computer.
         </p>
         <div className="mt-12 flex items-center justify-center gap-4">
-          <Button size="lg" className="rounded-full text-base">
-            Login <ArrowUpRight className="!h-5 !w-5" />
-          </Button>
+          <Login />
           <Button
             variant="outline"
             size="lg"
