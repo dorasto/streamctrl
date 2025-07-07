@@ -19,11 +19,16 @@ import { cn } from "~/lib/utils";
 
 import { Button } from "../ui/button";
 import { Home, Menu, SidebarClose } from "lucide-react";
+import { useAuth } from "./auth-provider";
+import type { ISession } from "~/lib/auth.client";
 
 export default function AppSidebar() {
   const { isOpen: sidebarIsOpen, toggleSidebar: toggleRootSidebar } =
     useDynamicSidebar(["root-sidebar-state"]);
-
+  const auth = useAuth();
+  const { data: session } = auth.authClient.useSession() as {
+    data: ISession | null;
+  };
   return (
     <Sidebar
       collapsible="offcanvas"
@@ -70,12 +75,30 @@ export default function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Another menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu></SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {session?.user.role === "admin" && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin Menu</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    size={"lg"}
+                    asChild
+                    //   isActive={
+                    //     matchPath(`/${item.name}`, useLocation().pathname) !==
+                    //     null
+                    //   }
+                  >
+                    <Link to={``}>
+                      {/* <Icon /> */}
+                      Users
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="bg-card rounded-b-md border-t">
         <SidebarMenu></SidebarMenu>

@@ -5,6 +5,7 @@ import {
   RootSidebarToggle,
 } from "~/components/base/app-sidebar";
 import { useAuth } from "~/components/base/auth-provider";
+import UserDropdown from "~/components/base/user-dropdown";
 
 function AuthContent() {
   const auth = useAuth();
@@ -37,7 +38,9 @@ function AuthContent() {
     <div className="flex h-dvh flex-1 flex-col overflow-hidden">
       <div className="bg-sidebar border-b z-50 flex h-(--header-height) items-center gap-2 p-2">
         <RootSidebarToggle />
-        <div className="ml-auto">{/* <Search /> */}</div>
+        <div className="ml-auto">
+          <UserDropdown />
+        </div>
       </div>
       <section className="bg-background flex !h-[calc(100dvh-var(--header-height))] flex-1">
         <div className="flex h-full w-fit max-w-fit transition-all">
