@@ -18,7 +18,7 @@ import { useLocation, matchPath, Link, redirect } from "react-router";
 import { cn } from "~/lib/utils";
 
 import { Button } from "../ui/button";
-import { Home, Menu, SidebarClose } from "lucide-react";
+import { Home, Menu, SidebarClose, Users } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import type { ISession } from "~/lib/auth.client";
 
@@ -84,13 +84,12 @@ export default function AppSidebar() {
                   <SidebarMenuButton
                     size={"lg"}
                     asChild
-                    //   isActive={
-                    //     matchPath(`/${item.name}`, useLocation().pathname) !==
-                    //     null
-                    //   }
+                    isActive={
+                      matchPath("/admin/users", useLocation().pathname) !== null
+                    }
                   >
-                    <Link to={``}>
-                      {/* <Icon /> */}
+                    <Link to={`/admin/users`}>
+                      <Users />
                       Users
                     </Link>
                   </SidebarMenuButton>

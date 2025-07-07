@@ -11,6 +11,8 @@ export default [
     layout("routes/admin/layout.tsx", [
       // Logged in pages
       route("/admin", "routes/admin/root.tsx"),
+      // Admin pages
+      route("/admin/users", "routes/admin/users.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;
