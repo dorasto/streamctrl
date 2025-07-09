@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OBS Relay Control Panel</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>OBS Remote Control</h1>
+
+        <div class="status-panel">
+            <p>Relay Connection: <span id="relayStatus" class="status-indicator unknown">Connecting...</span></p>
+            <p>OBS Connection: <span id="obsStatus" class="status-indicator unknown">Disconnected</span></p>
+            <p>Active Profile: <span id="activeProfileName">-</span></p>
+            <p>Current Scene: <span id="currentScene">-</span></p>
+        </div>
+
+        <div class="profile-panel">
+            <h2>OBS Profiles</h2>
+            <select id="profileSelect"></select>
+            <button id="connectProfileBtn">Connect to Profile</button>
+            <button id="refreshProfilesBtn">Refresh Profiles</button>
+        </div>
+
+        <div class="controls-panel">
+            <section>
+                <h2>Scene Control</h2>
+                <select id="sceneSelect"></select>
+                <button id="setSceneBtn" disabled>Set Scene</button>
+                <button id="refreshScenesBtn">Refresh Scenes</button>
+            </section>
+
+            <section>
+                <h2>Source Control (Current Scene)</h2>
+                <div class="source-controls">
+                    <select id="sourceSelect" disabled></select>
+                    <button id="toggleSourceBtn" disabled>Toggle Visibility</button>
+                    <button id="refreshSourcesBtn" disabled>Refresh Sources</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Filter Control</h2>
+                <div class="filter-source-select">
+                    <select id="filterSourceSelect" disabled></select>
+                    <button id="getFiltersBtn" disabled>Get Filters</button>
+                </div>
+                <div class="filter-controls">
+                    <select id="filterSelect" disabled></select>
+                    <button id="toggleFilterBtn" disabled>Toggle Filter</button>
+                </div>
+            </section>
+
+            <!-- NEW: Audio Control Section -->
+            <section>
+                <h2>Audio Control</h2>
+                <div class="audio-controls">
+                    <div class="audio-input-select">
+                        <select id="audioInputSelect" disabled></select>
+                        <button id="refreshAudioInputsBtn" disabled>Refresh Audio</button>
+                    </div>
+
+                    <div id="audioControlPanel" class="audio-control-panel" style="display: none;">
+                        <div class="volume-slider-group">
+                            <label for="volumeSlider">Volume (<span id="volumeDbValue">0.0</span> dB)</label>
+                            <input type="range" id="volumeSlider" min="-100" max="26" value="0" step="0.1" disabled>
+                        </div>
+                        <div class="mute-level-group">
+                            <button id="muteToggleBtn" disabled>Mute</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- END NEW Audio Control Section -->
+
+        </div>
+
+        <div class="messages-layout-container">
+            <div class="messages-panel messages-obs-full-width">
+                <h2>Messages from OBS WebSocket</h2>
+                <pre id="messages-obs"></pre>
+            </div>
+            <div class="messages-grid-container">
+                <div class="messages-panel">
+                    <h2>Messages from Relay WebSocket</h2>
+                    <pre id="messages-api-relay-ws"></pre>
+                </div>
+                <div class="messages-panel">
+                    <h2>Messages from Relay HTTP API</h2>
+                    <pre id="messages-api-http-server"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
