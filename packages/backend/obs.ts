@@ -19,7 +19,7 @@ export let dbObsProfiles: ObsProfileConfig[] = [
     id: "profile_1",
     name: "My Local OBS Studio",
     url: "ws://localhost:4455",
-    password: "hoptent1", // <--- SET YOUR ACTUAL OBS PASSWORD IF APPLICABLE
+    password: "", // <--- SET YOUR ACTUAL OBS PASSWORD IF APPLICABLE
   },
   {
     id: "profile_2",
