@@ -1,2 +1,3 @@
-frontend/bun.lock
+.DS_Store
+/node_modules/
 .env

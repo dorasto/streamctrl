@@ -1,0 +1,11 @@
+{
+  "name": "streamctrl",
+  "private": false,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "backend:start": "cd packages/backend && bun run index.ts",
+    "frontend:dev": "cd packages/frontend && bun run dev"
+  }
+}
