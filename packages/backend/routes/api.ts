@@ -1,12 +1,7 @@
 import { Hono } from "hono";
-import {
-  connectToObs,
-  currentObsProfile,
-  dbObsProfiles,
-  obsWsConnected,
-} from "../obs"; // Assuming 'obs' related imports are at the same level or relative path
+import { connectToObs, currentObsProfile, obsWsConnected } from "../obs"; // Assuming 'obs' related imports are at the same level or relative path
 import { auth } from "../auth"; // Assuming 'auth' is also relative to 'src'
-import { sendObsRequestToBackend } from "..";
+import { dbObsProfiles, sendObsRequestToBackend } from "..";
 
 // Create a new Hono app instance specifically for API routes
 // We need to pass the same Variables type here so that 'c.get("user")' works
@@ -25,10 +20,10 @@ apiRoutes.get("/obs-status", async (c) => {
 });
 
 apiRoutes.get("/obs-profiles", async (c) => {
-  const profilesForFrontend = dbObsProfiles.map(({ id, name, url }) => ({
+  const profilesForFrontend = dbObsProfiles.map(({ id, name, connection }) => ({
     id,
     name,
-    url,
+    ip: connection.ip,
   }));
   return c.json(profilesForFrontend);
 });

@@ -6,15 +6,11 @@ import { createNodeWebSocket } from "@hono/node-ws";
 import fs from "fs"; // fs is needed for getContent in serveStatic
 import { WSContext } from "hono/ws";
 import { auth } from "./auth"; // Assuming 'auth' is still used for API security
-import {
-  connectToObs,
-  currentObsProfile,
-  dbObsProfiles,
-  obsWs,
-  obsWsConnected,
-} from "./obs";
+import { connectToObs, currentObsProfile, obsWs, obsWsConnected } from "./obs";
 import apiRoutes from "./routes/api";
-
+import { db } from "db";
+import * as schema from "db/schema/index";
+export let dbObsProfiles: any[] = [];
 const app = new Hono<{
   Variables: {
     user: typeof auth.$Infer.Session.user | null;
@@ -40,15 +36,18 @@ app.use("/api/*", async (c, next) => {
 });
 // Store connected frontend WebSocket clients
 export const frontendClients = new Set<WSContext<WebSocket>>();
-
-// Initial connection attempt with the first profile loaded from our "DB"
-if (dbObsProfiles.length > 0) {
-  connectToObs(dbObsProfiles[0]);
-} else {
-  console.warn(
-    "No OBS profiles configured in the dummy database. Please add profiles to dbObsProfiles array."
-  );
-}
+db.select()
+  .from(schema.profile)
+  .then((data) => {
+    dbObsProfiles = data;
+    if (dbObsProfiles.length > 0) {
+      connectToObs(dbObsProfiles[0]);
+    } else {
+      console.warn(
+        "No OBS profiles configured in the dummy database. Please add profiles to dbObsProfiles array."
+      );
+    }
+  });
 // --- Helper function to send requests to OBS via obsWs (REAL) ---
 // This function needs to be accessible to API routes, so we'll put it here.
 export async function sendObsRequestToBackend(

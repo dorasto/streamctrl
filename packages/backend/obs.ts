@@ -1,42 +1,22 @@
 import WebSocket from "ws"; // This is the 'ws' npm package's WebSocket
 import { createHash } from "crypto";
 import { frontendClients } from ".";
+import * as schema from "db/schema/index";
 // OBS WebSocket connection
 export let obsWs: WebSocket | null = null;
 export let obsWsConnected: boolean = false; // Track OBS connection status more explicitly
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null; // Use setTimeout for single reconnect attempts
-// --- Dummy Database / Profile Management ---
-interface ObsProfileConfig {
-  id: string; // Unique ID for the profile (as if from DB)
-  name: string;
-  url: string; // Real OBS WebSocket URL
-  password?: string; // OBS WebSocket password (if any)
-}
+// --- Dummy Database / Profile Management ---];
+export type IProfile = typeof schema.profile.$inferSelect;
 
-// In-memory array to simulate database-fetched profiles
-export let dbObsProfiles: ObsProfileConfig[] = [
-  {
-    id: "profile_1",
-    name: "My Local OBS Studio",
-    url: "ws://localhost:4455",
-    password: "", // <--- SET YOUR ACTUAL OBS PASSWORD IF APPLICABLE
-  },
-  {
-    id: "profile_2",
-    name: "OBS Without Auth",
-    url: "ws://localhost:4455", // Example for an OBS without authentication
-    password: "",
-  },
-];
-
-export let currentObsProfile: ObsProfileConfig | null = null; // Currently active OBS profile
+export let currentObsProfile: any = null; // Currently active OBS profile
 
 // Function to compute the SHA256 hash
 const sha256 = (str: string): string => {
   return createHash("sha256").update(str).digest("base64");
 };
 // --- OBS WebSocket Connection Logic (REAL) ---
-export const connectToObs = (profile: ObsProfileConfig) => {
+export const connectToObs = (profile: IProfile) => {
   // Clear any existing reconnect timeout if trying a new connection
   if (reconnectTimeout) {
     clearTimeout(reconnectTimeout);
@@ -56,10 +36,11 @@ export const connectToObs = (profile: ObsProfileConfig) => {
 
   currentObsProfile = profile; // Set the new current profile
   console.log(
-    `Attempting to connect to OBS WebSocket for profile: ${profile.name} at ${profile.url}...`
+    //@ts-expect-error
+    `Attempting to connect to OBS WebSocket for profile: ${profile.name} at ${profile.connection.ip}...`
   );
-
-  obsWs = new WebSocket(profile.url); // Attempt real WebSocket connection
+  //@ts-expect-error
+  obsWs = new WebSocket(profile.connection.ip); // Attempt real WebSocket connection
 
   obsWs.addEventListener("open", () => {
     console.log(
@@ -92,7 +73,8 @@ export const connectToObs = (profile: ObsProfileConfig) => {
     if (parsedMessage.op === 0) {
       const authenticationRequired =
         parsedMessage.d.authentication !== undefined;
-      const obsPassword = profile.password || ""; // Use password from the selected profile
+      //@ts-expect-error
+      const obsPassword = profile.connection.password || ""; // Use password from the selected profile
 
       if (authenticationRequired && obsPassword) {
         const authChallenge = parsedMessage.d.authentication.challenge;
