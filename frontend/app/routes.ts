@@ -8,11 +8,13 @@ export default [
   layout("routes/layout.tsx", [
     // Homepage
     route("/login", "routes/home.tsx"),
-    layout("routes/admin/layout.tsx", [
+    layout("routes/root/layout.tsx", [
       // Logged in pages
-      route("/", "routes/admin/root.tsx"),
+      route("/", "routes/root/root.tsx"),
+      // OBS
+      route("/group/:groupId", "routes/root/obs/index.tsx"),
       // Admin pages
-      route("/admin/users", "routes/admin/users.tsx"),
+      route("/admin/users", "routes/root/users.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;
