@@ -43,9 +43,9 @@ export default function AppSidebar() {
             <SidebarMenuButton
               asChild
               size={"lg"}
-              isActive={matchPath("/admin", useLocation().pathname) !== null}
+              isActive={matchPath("/", useLocation().pathname) !== null}
             >
-              <Link to={"/admin"}>
+              <Link to={"/"}>
                 <Home />
                 Home
               </Link>
