@@ -7,10 +7,10 @@ export default [
   // Pages
   layout("routes/layout.tsx", [
     // Homepage
-    route("/", "routes/home.tsx"),
+    route("/login", "routes/home.tsx"),
     layout("routes/admin/layout.tsx", [
       // Logged in pages
-      route("/admin", "routes/admin/root.tsx"),
+      route("/", "routes/admin/root.tsx"),
       // Admin pages
       route("/admin/users", "routes/admin/users.tsx"),
     ]),

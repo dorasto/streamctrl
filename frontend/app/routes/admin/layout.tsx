@@ -29,7 +29,7 @@ function AuthContent() {
       <div>
         <h1>Unauthorized</h1>
         <p>You must be logged in to view this page.</p>
-        <button onClick={() => navigate("/")}>Go to Homepage</button>
+        <button onClick={() => navigate("/login")}>Go to Login</button>
       </div>
     );
   }
