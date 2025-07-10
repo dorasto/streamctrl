@@ -37,6 +37,16 @@ apiRoutes.get("/obs-profiles", async (c) => {
   );
   return c.json(profilesForFrontend);
 });
+apiRoutes.get("/refresh-actions", async (c) => {
+  const actions = await db
+    .select()
+    .from(schema.action)
+    .where(
+      sql`${schema.action.profileIds} ?| array[${currentObsProfile.id}]::text[]`
+    );
+  setDbObsActions(actions);
+  return c.json(actions);
+});
 
 apiRoutes.post("/select-obs-profile", async (c) => {
   const { profileId } = await c.req.json();
