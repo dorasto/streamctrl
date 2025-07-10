@@ -1,9 +1,14 @@
 import { Hono } from "hono";
 import { connectToObs, currentObsProfile, obsWsConnected } from "../obs"; // Assuming 'obs' related imports are at the same level or relative path
 import { auth } from "../auth"; // Assuming 'auth' is also relative to 'src'
-import { dbObsProfiles, sendObsRequestToBackend } from "..";
+import {
+  dbObsProfiles,
+  sendObsRequestToBackend,
+  setDbObsActions,
+  setDbObsProfiles,
+} from "..";
 import { db, schema } from "db";
-import { eq, ne } from "drizzle-orm";
+import { eq, ne, sql } from "drizzle-orm";
 
 // Create a new Hono app instance specifically for API routes
 // We need to pass the same Variables type here so that 'c.get("user")' works
@@ -67,6 +72,29 @@ apiRoutes.post("/select-obs-profile", async (c) => {
         .set({ active: true })
         .where(eq(schema.profile.id, profileId));
     });
+    db.select()
+      .from(schema.profile)
+      .then(async (data) => {
+        setDbObsProfiles(data);
+        if (dbObsProfiles.length > 0) {
+          const active = dbObsProfiles.find((e) => e.active);
+          if (active) {
+            setDbObsActions(
+              await db
+                .select()
+                .from(schema.action)
+                .where(
+                  sql`${schema.action.profileIds} ?| array[${active.id}]::text[]`
+                )
+            );
+            connectToObs(active);
+          } else {
+            console.warn("No OBS profiles active");
+          }
+        } else {
+          console.warn("No OBS profiles");
+        }
+      });
     connectToObs(selectedProfile);
     return c.json({
       success: true,

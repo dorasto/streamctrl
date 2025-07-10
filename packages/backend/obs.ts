@@ -1,7 +1,9 @@
 import WebSocket from "ws"; // This is the 'ws' npm package's WebSocket
 import { createHash } from "crypto";
-import { frontendClients, sendObsRequestToBackend } from ".";
+import { actions, frontendClients, sendObsRequestToBackend } from ".";
 import * as schema from "db/schema/index";
+import { db } from "db";
+import { arrayOverlaps, sql } from "drizzle-orm";
 // OBS WebSocket connection
 export let obsWs: WebSocket | null = null;
 export let obsWsConnected: boolean = false; // Track OBS connection status more explicitly
@@ -35,7 +37,6 @@ export const connectToObs = (profile: IProfile) => {
   }
 
   currentObsProfile = profile; // Set the new current profile
-  console.log("🚀 ~ connectToObs ~ currentObsProfile:", currentObsProfile);
   console.log(
     //@ts-expect-error
     `Attempting to connect to OBS WebSocket for profile: ${profile.name} at ${profile.connection.ip}...`
@@ -54,7 +55,6 @@ export const connectToObs = (profile: IProfile) => {
       reconnectTimeout = null;
     }
   });
-
   // Main message handler for OBS WebSocket
   obsWs.addEventListener("message", (event) => {
     const messageData = event.data;
@@ -69,7 +69,7 @@ export const connectToObs = (profile: IProfile) => {
       console.error("Failed to parse OBS message:", e);
       return;
     }
-    ActionTest(currentObsProfile.actions, parsedMessage);
+    ActionRunnerTest(actions, parsedMessage);
     // --- Handle OBS Hello (Op Code 0) for authentication ---
     if (parsedMessage.op === 0) {
       const authenticationRequired =
@@ -218,15 +218,18 @@ export const connectToObs = (profile: IProfile) => {
   });
 };
 
-async function ActionTest(actions: any[], message: any) {
-  const found = actions.find(
-    (e) =>
-      e.trigger.type === message.d.eventType &&
-      e.trigger.itemId === message.d.eventData.sceneItemId &&
-      e.trigger.sceneUuid === message.d.eventData.sceneUuid
+function ActionRunnerTest(actions: any[], message: any) {
+  const found = actions.find((e) =>
+    e.triggers.find(
+      (trigger: any) =>
+        e.active &&
+        trigger.type === message.d.eventType &&
+        trigger.itemId === message.d.eventData.sceneItemId &&
+        trigger.sceneUuid === message.d.eventData.sceneUuid
+    )
   );
-  found?.action.map(async (e) => {
-    const response = await sendObsRequestToBackend(e.type, {
+  found?.actions.map((e) => {
+    sendObsRequestToBackend(e.type, {
       ...e.settings,
       sceneItemEnabled: message.d.eventData.sceneItemEnabled,
     });

@@ -11,9 +11,14 @@ import { connectToObs, currentObsProfile, obsWs, obsWsConnected } from "./obs";
 import apiRoutes from "./routes/api";
 import { db } from "db";
 import * as schema from "db/schema/index";
+import { sql } from "drizzle-orm";
 export let dbObsProfiles: any[] = [];
 export function setDbObsProfiles(newProfiles: any[]): void {
   dbObsProfiles = newProfiles;
+}
+export let actions: any[] = [];
+export function setDbObsActions(newActions: any[]): void {
+  actions = newActions;
 }
 const app = new Hono<{
   Variables: {
@@ -53,11 +58,17 @@ app.use("/api/*", async (c, next) => {
 export const frontendClients = new Set<WSContext<WebSocket>>();
 db.select()
   .from(schema.profile)
-  .then((data) => {
+  .then(async (data) => {
     dbObsProfiles = data;
     if (dbObsProfiles.length > 0) {
       const active = dbObsProfiles.find((e) => e.active);
       if (active) {
+        actions = await db
+          .select()
+          .from(schema.action)
+          .where(
+            sql`${schema.action.profileIds} ?| array[${active.id}]::text[]`
+          );
         connectToObs(active);
       } else {
         console.warn("No OBS profiles active");
