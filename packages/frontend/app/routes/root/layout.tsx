@@ -7,13 +7,14 @@ import {
 import { useAuth } from "~/components/base/auth-provider";
 import PillBar from "~/components/base/pill-status";
 import UserDropdown from "~/components/base/user-dropdown";
+import useWebSocket from "~/utils/ws";
+import { RootProvider } from "~/utils/Context";
 
 function AuthContent() {
   const auth = useAuth();
   const navigate = useNavigate();
-
+  const ws = useWebSocket();
   // useAuth() will initially return null, so we must handle that case.
-
   // Now that we know auth is available, we can safely use the session.
   const { data: session, isPending } = auth.authClient.useSession();
 
@@ -51,7 +52,9 @@ function AuthContent() {
           <AppSidebarProvider />
         </div>
         <div className="flex h-full w-full flex-col overflow-y-scroll p-3 transition-all">
-          <Outlet />
+          <RootProvider ws={ws} session={session}>
+            <Outlet />
+          </RootProvider>
         </div>
       </section>
     </div>

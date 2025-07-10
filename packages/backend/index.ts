@@ -192,7 +192,15 @@ app.get(
         ws.send(
           JSON.stringify({
             type: "relay_connection_status", // Relay's own connection to frontend
-            data: { status: "connected", clientId: crypto.randomUUID() },
+            data: {
+              status: "connected",
+              clientId: crypto.randomUUID(),
+              profile: {
+                id: currentObsProfile.id,
+                name: currentObsProfile.name,
+                active: currentObsProfile.active,
+              },
+            },
           })
         );
         // Also send current OBS status via relay_obs_status type

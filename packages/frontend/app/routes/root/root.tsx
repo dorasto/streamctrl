@@ -1,7 +1,7 @@
-import { Label } from "~/components/ui/label";
 import type { Route } from "../+types/home";
-import { useAuth } from "~/components/base/auth-provider";
 import ObsList from "~/components/root/obs-list";
+import { Button } from "~/components/ui/button";
+import { useLayoutData } from "~/utils/Context";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,12 +11,12 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Root() {
-  const auth = useAuth();
-  const { data: session } = auth.authClient.useSession();
-
+  const { ws, session } = useLayoutData();
   return (
     <div className="flex flex-col gap-3">
       <ObsList />
+      <Button onClick={() => ws?.close()}>Close Socket</Button>
+      session:{JSON.stringify(session)}
     </div>
   );
 }

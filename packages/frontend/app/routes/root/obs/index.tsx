@@ -1,9 +1,7 @@
-import { Label } from "~/components/ui/label";
-import { useAuth } from "~/components/base/auth-provider";
-import ObsList from "~/components/root/obs-list";
 import type { Route } from "./+types";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { useLayoutData } from "~/utils/Context";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -13,9 +11,6 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function ObsPage() {
-  const auth = useAuth();
-  const { data: session } = auth.authClient.useSession();
-
   return (
     <div className="flex flex-col gap-3">
       <Card>
