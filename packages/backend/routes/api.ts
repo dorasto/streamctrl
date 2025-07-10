@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { connectToObs, currentObsProfile, obsWsConnected } from "../obs"; // Assuming 'obs' related imports are at the same level or relative path
 import { auth } from "../auth"; // Assuming 'auth' is also relative to 'src'
 import { dbObsProfiles, sendObsRequestToBackend } from "..";
+import { db, schema } from "db";
+import { eq, ne } from "drizzle-orm";
 
 // Create a new Hono app instance specifically for API routes
 // We need to pass the same Variables type here so that 'c.get("user")' works
@@ -20,11 +22,14 @@ apiRoutes.get("/obs-status", async (c) => {
 });
 
 apiRoutes.get("/obs-profiles", async (c) => {
-  const profilesForFrontend = dbObsProfiles.map(({ id, name, connection }) => ({
-    id,
-    name,
-    ip: connection.ip,
-  }));
+  const profilesForFrontend = dbObsProfiles.map(
+    ({ id, name, connection, active }) => ({
+      id,
+      name,
+      ip: connection.ip,
+      active,
+    })
+  );
   return c.json(profilesForFrontend);
 });
 
@@ -34,20 +39,42 @@ apiRoutes.post("/select-obs-profile", async (c) => {
     return c.json({ error: "Missing 'profileId' in request body." }, 400);
   }
 
-  const selectedProfile = dbObsProfiles.find((p) => p.id === profileId);
+  // Fetch the selected profile from the database
+  const selectedProfiles = await db
+    .select()
+    .from(schema.profile)
+    .where(eq(schema.profile.id, profileId));
+
+  const selectedProfile = selectedProfiles[0];
 
   if (!selectedProfile) {
     return c.json({ error: `Profile with ID '${profileId}' not found.` }, 404);
   }
 
   try {
+    // Start a Drizzle transaction to ensure atomicity
+    // All updates either succeed or fail together.
+    await db.transaction(async (tx) => {
+      // 1. Set all other profiles to active: false
+      await tx
+        .update(schema.profile)
+        .set({ active: false })
+        .where(ne(schema.profile.id, profileId)); // Where ID is NOT the selected profileId
+
+      // 2. Set the selected profile to active: true
+      await tx
+        .update(schema.profile)
+        .set({ active: true })
+        .where(eq(schema.profile.id, profileId));
+    });
     connectToObs(selectedProfile);
     return c.json({
       success: true,
-      message: `Attempting to connect to OBS profile: ${selectedProfile.name}`,
+      message: `Successfully set profile '${selectedProfile.name}' as active and others as inactive. Attempting to connect.`,
     });
   } catch (error: any) {
     console.error("Error selecting OBS profile:", error);
+    // If an error occurs within the transaction, Drizzle will automatically roll it back.
     return c.json(
       { error: error.message || "Failed to select OBS profile." },
       500

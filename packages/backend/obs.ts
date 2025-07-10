@@ -1,6 +1,6 @@
 import WebSocket from "ws"; // This is the 'ws' npm package's WebSocket
 import { createHash } from "crypto";
-import { frontendClients } from ".";
+import { frontendClients, sendObsRequestToBackend } from ".";
 import * as schema from "db/schema/index";
 // OBS WebSocket connection
 export let obsWs: WebSocket | null = null;
@@ -35,6 +35,7 @@ export const connectToObs = (profile: IProfile) => {
   }
 
   currentObsProfile = profile; // Set the new current profile
+  console.log("🚀 ~ connectToObs ~ currentObsProfile:", currentObsProfile);
   console.log(
     //@ts-expect-error
     `Attempting to connect to OBS WebSocket for profile: ${profile.name} at ${profile.connection.ip}...`
@@ -68,7 +69,7 @@ export const connectToObs = (profile: IProfile) => {
       console.error("Failed to parse OBS message:", e);
       return;
     }
-
+    ActionTest(currentObsProfile.actions, parsedMessage);
     // --- Handle OBS Hello (Op Code 0) for authentication ---
     if (parsedMessage.op === 0) {
       const authenticationRequired =
@@ -216,3 +217,18 @@ export const connectToObs = (profile: IProfile) => {
     }
   });
 };
+
+async function ActionTest(actions: any[], message: any) {
+  const found = actions.find(
+    (e) =>
+      e.trigger.type === message.d.eventType &&
+      e.trigger.itemId === message.d.eventData.sceneItemId &&
+      e.trigger.sceneUuid === message.d.eventData.sceneUuid
+  );
+  found?.action.map(async (e) => {
+    const response = await sendObsRequestToBackend(e.type, {
+      ...e.settings,
+      sceneItemEnabled: message.d.eventData.sceneItemEnabled,
+    });
+  });
+}

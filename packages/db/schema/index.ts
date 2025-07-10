@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, jsonb, uuid } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  jsonb,
+  uuid,
+  boolean,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 export const profile = pgTable("profile", {
   id: uuid("id").primaryKey(),
@@ -16,4 +23,6 @@ export const profile = pgTable("profile", {
     ip: "",
     password: "",
   }),
+  active: boolean("active").default(false),
+  actions: jsonb("actions").notNull().default([]),
 });

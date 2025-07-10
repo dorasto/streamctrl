@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "hono/serve-static";
 import WebSocket from "ws"; // This is the 'ws' npm package's WebSocket
@@ -11,12 +12,26 @@ import apiRoutes from "./routes/api";
 import { db } from "db";
 import * as schema from "db/schema/index";
 export let dbObsProfiles: any[] = [];
+export function setDbObsProfiles(newProfiles: any[]): void {
+  dbObsProfiles = newProfiles;
+}
 const app = new Hono<{
   Variables: {
     user: typeof auth.$Infer.Session.user | null;
     session: typeof auth.$Infer.Session.session | null;
   };
 }>();
+app.use(
+  "*",
+  cors({
+    origin: "http://localhost:5173",
+    allowHeaders: [],
+    allowMethods: ["POST", "GET", "OPTIONS"],
+    exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
+    maxAge: 600,
+    credentials: true,
+  })
+);
 app.use("*", async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) {
@@ -41,11 +56,14 @@ db.select()
   .then((data) => {
     dbObsProfiles = data;
     if (dbObsProfiles.length > 0) {
-      connectToObs(dbObsProfiles[0]);
+      const active = dbObsProfiles.find((e) => e.active);
+      if (active) {
+        connectToObs(active);
+      } else {
+        console.warn("No OBS profiles active");
+      }
     } else {
-      console.warn(
-        "No OBS profiles configured in the dummy database. Please add profiles to dbObsProfiles array."
-      );
+      console.warn("No OBS profiles");
     }
   });
 // --- Helper function to send requests to OBS via obsWs (REAL) ---
