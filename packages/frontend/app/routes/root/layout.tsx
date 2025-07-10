@@ -1,10 +1,11 @@
-import { Loader2 } from "lucide-react";
+import { CheckCircleIcon, Loader2 } from "lucide-react";
 import { matchPath, Outlet, useLocation, useNavigate } from "react-router";
 import {
   AppSidebarProvider,
   RootSidebarToggle,
 } from "~/components/base/app-sidebar";
 import { useAuth } from "~/components/base/auth-provider";
+import PillBar from "~/components/base/pill-status";
 import UserDropdown from "~/components/base/user-dropdown";
 
 function AuthContent() {
@@ -38,6 +39,9 @@ function AuthContent() {
     <div className="flex h-dvh flex-1 flex-col overflow-hidden">
       <div className="bg-sidebar border-b z-50 flex h-(--header-height) items-center gap-2 p-2">
         <RootSidebarToggle />
+        <div className="flex items-center gap-2">
+          <PillBar />
+        </div>
         <div className="ml-auto">
           <UserDropdown />
         </div>
