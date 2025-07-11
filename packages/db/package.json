@@ -1,6 +1,10 @@
 {
     "name": "db",
     "type": "module",
+    "scripts": {
+        "db:push": "npx drizzle-kit push",
+        "db:studio": "pnpm drizzle-kit studio"
+    },
     "dependencies": {
         "frontend": "workspace:*",
         "backend": "workspace:*",

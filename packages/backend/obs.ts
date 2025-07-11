@@ -122,6 +122,7 @@ export const connectToObs = (profile: IProfile) => {
                 profile: {
                   name: currentObsProfile?.name || "Unknown Profile",
                   id: currentObsProfile?.id || "unknown",
+                  active: currentObsProfile.active || false,
                 },
               },
             })

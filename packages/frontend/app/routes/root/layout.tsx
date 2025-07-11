@@ -37,27 +37,27 @@ function AuthContent() {
   }
 
   return (
-    <div className="flex h-dvh flex-1 flex-col overflow-hidden">
-      <div className="bg-sidebar border-b z-50 flex h-(--header-height) items-center gap-2 p-2">
-        <RootSidebarToggle />
-        <div className="flex items-center gap-2">
-          <PillBar />
+    <RootProvider ws={ws} session={session}>
+      <div className="flex h-dvh flex-1 flex-col overflow-hidden">
+        <div className="bg-sidebar border-b z-50 flex h-(--header-height) items-center gap-2 p-2">
+          <RootSidebarToggle />
+          <div className="flex items-center gap-2">
+            <PillBar />
+          </div>
+          <div className="ml-auto">
+            <UserDropdown />
+          </div>
         </div>
-        <div className="ml-auto">
-          <UserDropdown />
-        </div>
-      </div>
-      <section className="bg-background flex !h-[calc(100dvh-var(--header-height))] flex-1">
-        <div className="flex h-full w-fit max-w-fit transition-all">
-          <AppSidebarProvider />
-        </div>
-        <div className="flex h-full w-full flex-col overflow-y-scroll p-3 transition-all">
-          <RootProvider ws={ws} session={session}>
+        <section className="bg-background flex !h-[calc(100dvh-var(--header-height))] flex-1">
+          <div className="flex h-full w-fit max-w-fit transition-all">
+            <AppSidebarProvider />
+          </div>
+          <div className="flex h-full w-full flex-col overflow-y-scroll p-3 transition-all">
             <Outlet />
-          </RootProvider>
-        </div>
-      </section>
-    </div>
+          </div>
+        </section>
+      </div>
+    </RootProvider>
   );
 }
 

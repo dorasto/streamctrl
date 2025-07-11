@@ -11,7 +11,7 @@ import { connectToObs, currentObsProfile, obsWs, obsWsConnected } from "./obs";
 import apiRoutes from "./routes/api";
 import { db } from "db";
 import * as schema from "db/schema/index";
-import { sql } from "drizzle-orm";
+import { sql, eq, ne } from "drizzle-orm";
 export let dbObsProfiles: any[] = [];
 export function setDbObsProfiles(newProfiles: any[]): void {
   dbObsProfiles = newProfiles;
@@ -216,10 +216,124 @@ app.get(
             },
           })
         );
+        const profilesForFrontend = dbObsProfiles.map(
+          ({ id, name, connection, active }) => ({
+            id,
+            name,
+            ip: connection.ip,
+            active,
+          })
+        );
+        ws.send(
+          JSON.stringify({
+            type: "relay_connection_profiles", // Relay's own connection to frontend
+            profiles: profilesForFrontend,
+          })
+        );
+        ws.send(
+          JSON.stringify({
+            type: "relay_connection_actions", // Relay's own connection to frontend
+            actions: actions,
+          })
+        );
       },
       onClose: (evt, ws) => {
         console.log("Frontend client disconnected!");
         frontendClients.delete(ws);
+      },
+      async onMessage(evt, ws) {
+        let wsMessage: any;
+        try {
+          wsMessage = JSON.parse(evt.data as string);
+        } catch (e) {
+          console.error("Failed to parse WebSocket message:", e);
+          return;
+        }
+        console.log(wsMessage);
+        if (wsMessage?.type === "switch_profile") {
+          // Fetch the selected profile from the database
+          const selectedProfiles = await db
+            .select()
+            .from(schema.profile)
+            .where(eq(schema.profile.id, wsMessage?.id));
+
+          const selectedProfile = selectedProfiles[0];
+
+          if (!selectedProfile) {
+            ws.send(
+              JSON.stringify({
+                type: "relay_connection_change_profile", // Relay's own connection to frontend
+                error: `Profile with ID '${wsMessage?.id}' not found.`,
+              })
+            );
+          }
+
+          try {
+            // Start a Drizzle transaction to ensure atomicity
+            // All updates either succeed or fail together.
+            await db.transaction(async (tx) => {
+              // 1. Set all other profiles to active: false
+              await tx
+                .update(schema.profile)
+                .set({ active: false })
+                .where(ne(schema.profile.id, wsMessage?.id)); // Where ID is NOT the selected profileId
+
+              // 2. Set the selected profile to active: true
+              await tx
+                .update(schema.profile)
+                .set({ active: true })
+                .where(eq(schema.profile.id, wsMessage?.id));
+            });
+            db.select()
+              .from(schema.profile)
+              .then(async (data) => {
+                setDbObsProfiles(data);
+                if (dbObsProfiles.length > 0) {
+                  const active = dbObsProfiles.find((e) => e.active);
+                  if (active) {
+                    setDbObsActions(
+                      await db
+                        .select()
+                        .from(schema.action)
+                        .where(
+                          sql`${schema.action.profileIds} ?| array[${active.id}]::text[]`
+                        )
+                    );
+                    connectToObs(active);
+                    const profilesForFrontend = dbObsProfiles.map(
+                      ({ id, name, connection, active }) => ({
+                        id,
+                        name,
+                        ip: connection.ip,
+                        active,
+                      })
+                    );
+                    frontendClients.forEach((client) => {
+                      if (client.readyState === WebSocket.OPEN) {
+                        client.send(
+                          JSON.stringify({
+                            type: "relay_connection_profiles", // Relay's own connection to frontend
+                            profiles: profilesForFrontend,
+                          })
+                        );
+                      }
+                    });
+                  } else {
+                    console.warn("No OBS profiles active");
+                  }
+                }
+              });
+          } catch (error: any) {
+            console.error("Error selecting OBS profile:", error);
+            // If an error occurs within the transaction, Drizzle will automatically roll it back.
+            ws.send(
+              JSON.stringify({
+                type: "relay_connection_change_profile", // Relay's own connection to frontend
+                error: error.message || "Failed to select OBS profile.",
+              })
+            );
+          }
+        }
       },
       onError: (evt, ws) => {
         const errorEvent = evt as Event & { error?: any };

@@ -2,6 +2,8 @@ import type { Route } from "./+types";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { useLayoutData } from "~/utils/Context";
+import { useParams } from "react-router";
+import { useStateManagement } from "~/hooks/useStateManagement";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,16 +13,30 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function ObsPage() {
+  const { groupId } = useParams();
+  const { value: WSProfiles } = useStateManagement<any[]>("ws-profiles", []);
+  const { value: WSActions } = useStateManagement<any[]>("ws-actions", []);
+  const profile = WSProfiles.find((e) => e.id === groupId);
+  if (!profile) {
+    <div>
+      <h1>Unauthorized</h1>
+      <p>You must be logged in to view this page.</p>
+    </div>;
+  }
   return (
     <div className="flex flex-col gap-3">
       <Card>
         <CardHeader>
-          <CardTitle>OBS Name</CardTitle>
+          <CardTitle>{profile.name}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Badge variant={"secondary"}>Connected</Badge>
+          <Badge variant={"secondary"}>
+            {" "}
+            {profile.active ? "Connected" : "Disconnected"}
+          </Badge>
         </CardContent>
       </Card>
+      {profile.active && JSON.stringify(WSActions)}
     </div>
   );
 }

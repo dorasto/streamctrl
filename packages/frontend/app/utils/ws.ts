@@ -8,11 +8,24 @@ const useWebSocket = () => {
     "ws-status",
     "Disconnected"
   );
+  const { setValue: setOBSStatus } = useStateManagement<any>(
+    "ws-obs-status",
+    "Disconnected"
+  );
   const { setValue: setWSProfile } = useStateManagement<any>("ws-profile", "");
+  const { setValue: setWSProfiles } = useStateManagement<any[]>(
+    "ws-profiles",
+    []
+  );
+  const { setValue: setWSActions } = useStateManagement<any[]>(
+    "ws-actions",
+    []
+  );
   useEffect(() => {
     const connectWebSocket = () => {
       if (!webSocket) {
         setWSStatus("Connecting"); // Set status to connecting when attempting to connect
+        setWSProfile("");
         webSocket = new WebSocket(import.meta.env.VITE_WS_URL);
         webSocket.onopen = () => {
           console.log("Connected to Hono OBS Relay WebSocket!");
@@ -24,16 +37,33 @@ const useWebSocket = () => {
           }
         };
         webSocket.onmessage = (e) => {
-          let data;
+          let wsMessage;
           try {
-            data = JSON.parse(e.data);
+            wsMessage = JSON.parse(e.data);
           } catch (e) {
             console.error("Failed to parse WebSocket message:", e);
             return;
           }
-          console.log("🚀 ~ connectWebSocket ~ data:", data);
-          if (data.type === "relay_connection_status") {
-            setWSProfile(data.data.profile);
+          console.log("🚀 ~ useWebSocket ~ onmessage ~ wsMessage:", wsMessage);
+          if (wsMessage.type === "relay_connection_status") {
+            setWSProfile(wsMessage.data.profile);
+          }
+          if (wsMessage.type === "relay_connection_profiles") {
+            setWSProfiles(wsMessage.profiles);
+          }
+          if (wsMessage.type === "relay_connection_actions") {
+            setWSActions(wsMessage.actions);
+          }
+          if (wsMessage.type === "relay_obs_status") {
+            if (wsMessage.data.comment === "Switching profiles") {
+              setWSProfile("Switching profiles...");
+            }
+            if (wsMessage.data.connection === "identified") {
+              setOBSStatus("Connected");
+              setWSProfile(wsMessage.data.profile);
+            } else if (wsMessage.data.connection === "disconnected") {
+              setOBSStatus("Disconnected");
+            }
           }
         };
         webSocket.onclose = () => {
@@ -41,11 +71,13 @@ const useWebSocket = () => {
           console.log("WebSocket disconnected. Attempting to reconnect...");
           setWs(null);
           setWSStatus("Reconnecting"); // Change status to "Reconnecting"
-          reconnectTimeout = setTimeout(() => {
-            if (!webSocket) {
-              connectWebSocket();
-            }
-          }, 5000); // Reconnect after 5 seconds
+          setWSProfile("");
+          setOBSStatus("Disconnected");
+          if (!webSocket) {
+            connectWebSocket();
+          }
+          // reconnectTimeout = setTimeout(() => {
+          // }, 5000); // Reconnect after 5 seconds
         };
 
         webSocket.onerror = (error) => {
@@ -54,7 +86,10 @@ const useWebSocket = () => {
             webSocket.close(); // Close the connection to trigger onclose and reconnect
           }
           webSocket = null;
-          connectWebSocket();
+          setWs(null);
+          setWSStatus("Disconnected"); // Change status to "Reconnecting"
+          setWSProfile("");
+          setOBSStatus("Disconnected");
         };
       }
     };
