@@ -5,6 +5,7 @@ import {
   jsonb,
   uuid,
   boolean,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 
@@ -40,4 +41,5 @@ export const action = pgTable("action", {
   active: boolean("active").default(true),
   triggers: jsonb("triggers").notNull().default([]),
   actions: jsonb("actions").notNull().default([]),
+  sort: numeric("sort"),
 });

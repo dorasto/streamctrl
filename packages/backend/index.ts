@@ -212,6 +212,7 @@ app.get(
               profile: {
                 name: currentObsProfile?.name || "None",
                 id: currentObsProfile?.id || "none",
+                active: currentObsProfile?.active || false,
               },
             },
           })

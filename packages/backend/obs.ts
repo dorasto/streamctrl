@@ -229,7 +229,7 @@ function ActionRunnerTest(actions: any[], message: any) {
         trigger.sceneUuid === message.d.eventData.sceneUuid
     )
   );
-  found?.actions.map((e) => {
+  found?.actions.map((e: any) => {
     sendObsRequestToBackend(e.type, {
       ...e.settings,
       sceneItemEnabled: message.d.eventData.sceneItemEnabled,
