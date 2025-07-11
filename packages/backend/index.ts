@@ -174,7 +174,7 @@ app.get(
   "/ws",
   upgradeWebSocket((c) => {
     return {
-      onOpen: (evt, ws) => {
+      onOpen: async (evt, ws) => {
         const session = c.get("session");
         if (!session) {
           ws.send(
@@ -314,6 +314,12 @@ app.get(
                           JSON.stringify({
                             type: "relay_connection_profiles", // Relay's own connection to frontend
                             profiles: profilesForFrontend,
+                          })
+                        );
+                        client.send(
+                          JSON.stringify({
+                            type: "relay_connection_actions", // Relay's own connection to frontend
+                            actions: actions,
                           })
                         );
                       }

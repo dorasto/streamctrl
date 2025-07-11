@@ -17,26 +17,20 @@ export default function ObsPage() {
   const { value: WSProfiles } = useStateManagement<any[]>("ws-profiles", []);
   const { value: WSActions } = useStateManagement<any[]>("ws-actions", []);
   const profile = WSProfiles.find((e) => e.id === groupId);
-  if (!profile) {
-    <div>
-      <h1>Unauthorized</h1>
-      <p>You must be logged in to view this page.</p>
-    </div>;
-  }
   return (
     <div className="flex flex-col gap-3">
       <Card>
         <CardHeader>
-          <CardTitle>{profile.name}</CardTitle>
+          <CardTitle>{profile?.name}</CardTitle>
         </CardHeader>
         <CardContent>
           <Badge variant={"secondary"}>
             {" "}
-            {profile.active ? "Connected" : "Disconnected"}
+            {profile?.active ? "Connected" : "Disconnected"}
           </Badge>
         </CardContent>
       </Card>
-      {profile.active && JSON.stringify(WSActions)}
+      {profile?.active && JSON.stringify(WSActions)}
     </div>
   );
 }
