@@ -40,7 +40,10 @@ const useWebSocket = () => {
             console.error("Failed to parse WebSocket message:", e);
             return;
           }
-          console.log("🚀 ~ useWebSocket ~ onmessage ~ wsMessage:", wsMessage);
+          console.log(
+            "🚀 ~ useWebSocket ~ onmessage ~ wsMessage:",
+            JSON.stringify(wsMessage, null, 2)
+          );
           if (wsMessage.type === "relay_connection_status") {
             setWSProfile(wsMessage.data.profile);
           }

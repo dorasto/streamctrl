@@ -6,8 +6,8 @@ import {
   useStateManagement,
   useStateManagementFetch,
 } from "~/hooks/useStateManagement";
-import { useEffect } from "react";
 import { Button } from "~/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,11 +18,12 @@ export function meta({}: Route.MetaArgs) {
 export default function ObsPage() {
   const { groupId } = useParams();
   const { value: WSProfiles } = useStateManagement<any[]>("ws-profiles", []);
+  const profile = WSProfiles.find((e) => e.id === groupId);
   const {
-    value: { data: Actions, fetchStatus: fetchStatus, refetch: refetchActions },
+    value: { data: Actions, refetch: refetchActions },
     mutate,
   } = useStateManagementFetch<any[]>({
-    key: ["actions"],
+    key: ["actions-" + profile?.id],
     initialData: [],
     fetch: {
       url: import.meta.env.VITE_API_URL + "actions",
@@ -67,11 +68,13 @@ export default function ObsPage() {
     },
     refetchOnWindowFocus: true,
   });
-  const profile = WSProfiles.find((e) => e.id === groupId);
-  useEffect(() => {
-    const fetchActions = async () => {};
-    fetchActions();
-  }, []); // The empty dependency array ensures this runs only once on mount
+  if (profile?.id === undefined) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-3">
       <Card>
@@ -91,7 +94,11 @@ export default function ObsPage() {
       >
         Test
       </Button>
-      {fetchStatus !== "fetching" && JSON.stringify(Actions)}
+      {Actions?.sort((a, b) => a.sort - b.sort)?.map((action, index) => (
+        <div key={index}>
+          {action.name} | {action.active ? "ON" : "OFF"}
+        </div>
+      ))}
     </div>
   );
 }

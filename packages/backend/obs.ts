@@ -206,11 +206,7 @@ export const connectToObs = (profile: IProfile) => {
     // Only attempt to reconnect if the close was not initiated by us (e.g., switching profiles, code 1000)
     // and if there isn't an existing reconnect attempt already scheduled,
     // and ensure we're trying to reconnect to the profile that just closed.
-    if (
-      event.code !== 1000 &&
-      !reconnectTimeout &&
-      currentObsProfile === profile
-    ) {
+    if (!reconnectTimeout && currentObsProfile === profile) {
       console.log(
         `Scheduling reconnect for profile ${profile.name} in 5 seconds due to close...`
       );

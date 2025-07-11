@@ -341,7 +341,17 @@ app.get(
     };
   })
 );
-
+setInterval(() => {
+  frontendClients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(
+        JSON.stringify({
+          type: "heartbeat",
+        })
+      );
+    }
+  });
+}, 30000);
 const server = serve({
   fetch: app.fetch,
   hostname: "0.0.0.0",

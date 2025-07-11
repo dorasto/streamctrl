@@ -32,6 +32,17 @@ apiRoutes.post("/actions", async (c) => {
   return c.json(actions);
 });
 
+apiRoutes.get("/refresh-actions", async (c) => {
+  const actions = await db
+    .select()
+    .from(schema.action)
+    .where(
+      sql`${schema.action.profileIds} ?| array[${currentObsProfile.id}]::text[]`
+    );
+  setDbObsActions(actions);
+  return c.json(actions);
+});
+
 apiRoutes.get("/scenes", async (c) => {
   try {
     if (!obsWsConnected) {
