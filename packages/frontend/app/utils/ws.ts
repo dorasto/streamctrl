@@ -17,10 +17,6 @@ const useWebSocket = () => {
     "ws-profiles",
     []
   );
-  const { setValue: setWSActions } = useStateManagement<any[]>(
-    "ws-actions",
-    []
-  );
   useEffect(() => {
     const connectWebSocket = () => {
       if (!webSocket) {
@@ -51,9 +47,6 @@ const useWebSocket = () => {
           if (wsMessage.type === "relay_connection_profiles") {
             setWSProfiles(wsMessage.profiles);
           }
-          if (wsMessage.type === "relay_connection_actions") {
-            setWSActions(wsMessage.actions);
-          }
           if (wsMessage.type === "relay_obs_status") {
             if (wsMessage.data.comment === "Switching profiles") {
               setWSProfile("Switching profiles...");
@@ -76,8 +69,6 @@ const useWebSocket = () => {
           if (!webSocket) {
             connectWebSocket();
           }
-          // reconnectTimeout = setTimeout(() => {
-          // }, 5000); // Reconnect after 5 seconds
         };
 
         webSocket.onerror = (error) => {

@@ -18,106 +18,18 @@ export const apiRoutes = new Hono<{
     session: typeof auth.$Infer.Session.session | null;
   };
 }>();
-apiRoutes.get("/obs-status", async (c) => {
-  return c.json({
-    connected: obsWsConnected,
-    currentProfile: currentObsProfile ? currentObsProfile.name : "None",
-    currentProfileId: currentObsProfile ? currentObsProfile.id : null,
-  });
-});
 
-apiRoutes.get("/obs-profiles", async (c) => {
-  const profilesForFrontend = dbObsProfiles.map(
-    ({ id, name, connection, active }) => ({
-      id,
-      name,
-      ip: connection.ip,
-      active,
-    })
-  );
-  return c.json(profilesForFrontend);
-});
-apiRoutes.get("/refresh-actions", async (c) => {
+apiRoutes.post("/actions", async (c) => {
+  const { profile_id } = await c.req.json();
+  if (!profile_id) {
+    return c.json({ error: "Missing 'profile_id' in request body." }, 400);
+  }
   const actions = await db
     .select()
     .from(schema.action)
-    .where(
-      sql`${schema.action.profileIds} ?| array[${currentObsProfile.id}]::text[]`
-    );
+    .where(sql`${schema.action.profileIds} ?| array[${profile_id}]::text[]`);
   setDbObsActions(actions);
   return c.json(actions);
-});
-
-apiRoutes.post("/select-obs-profile", async (c) => {
-  const { profileId } = await c.req.json();
-  if (!profileId) {
-    return c.json({ error: "Missing 'profileId' in request body." }, 400);
-  }
-
-  // Fetch the selected profile from the database
-  const selectedProfiles = await db
-    .select()
-    .from(schema.profile)
-    .where(eq(schema.profile.id, profileId));
-
-  const selectedProfile = selectedProfiles[0];
-
-  if (!selectedProfile) {
-    return c.json({ error: `Profile with ID '${profileId}' not found.` }, 404);
-  }
-
-  try {
-    // Start a Drizzle transaction to ensure atomicity
-    // All updates either succeed or fail together.
-    await db.transaction(async (tx) => {
-      // 1. Set all other profiles to active: false
-      await tx
-        .update(schema.profile)
-        .set({ active: false })
-        .where(ne(schema.profile.id, profileId)); // Where ID is NOT the selected profileId
-
-      // 2. Set the selected profile to active: true
-      await tx
-        .update(schema.profile)
-        .set({ active: true })
-        .where(eq(schema.profile.id, profileId));
-    });
-    db.select()
-      .from(schema.profile)
-      .then(async (data) => {
-        setDbObsProfiles(data);
-        if (dbObsProfiles.length > 0) {
-          const active = dbObsProfiles.find((e) => e.active);
-          if (active) {
-            setDbObsActions(
-              await db
-                .select()
-                .from(schema.action)
-                .where(
-                  sql`${schema.action.profileIds} ?| array[${active.id}]::text[]`
-                )
-            );
-            connectToObs(active);
-          } else {
-            console.warn("No OBS profiles active");
-          }
-        } else {
-          console.warn("No OBS profiles");
-        }
-      });
-    connectToObs(selectedProfile);
-    return c.json({
-      success: true,
-      message: `Successfully set profile '${selectedProfile.name}' as active and others as inactive. Attempting to connect.`,
-    });
-  } catch (error: any) {
-    console.error("Error selecting OBS profile:", error);
-    // If an error occurs within the transaction, Drizzle will automatically roll it back.
-    return c.json(
-      { error: error.message || "Failed to select OBS profile." },
-      500
-    );
-  }
 });
 
 apiRoutes.get("/scenes", async (c) => {

@@ -166,7 +166,7 @@ app.get(
     },
   })
 );
-app.route("/api", apiRoutes);
+app.route("/api/backend", apiRoutes);
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
 // WebSocket endpoint for frontend clients (remains for real-time updates)
@@ -228,12 +228,6 @@ app.get(
           JSON.stringify({
             type: "relay_connection_profiles", // Relay's own connection to frontend
             profiles: profilesForFrontend,
-          })
-        );
-        ws.send(
-          JSON.stringify({
-            type: "relay_connection_actions", // Relay's own connection to frontend
-            actions: actions,
           })
         );
       },
@@ -314,12 +308,6 @@ app.get(
                           JSON.stringify({
                             type: "relay_connection_profiles", // Relay's own connection to frontend
                             profiles: profilesForFrontend,
-                          })
-                        );
-                        client.send(
-                          JSON.stringify({
-                            type: "relay_connection_actions", // Relay's own connection to frontend
-                            actions: actions,
                           })
                         );
                       }

@@ -40,7 +40,6 @@ export function useStateManagement<T>(
     setValue,
   };
 }
-
 export interface UseStateManagementFetchType<TypeFetch, TypeMutate> {
   key: string[];
   fetch: {
@@ -68,6 +67,7 @@ export interface UseStateManagementFetchResult<TypeFetch, TypeMutate = any> {
     error: Error | null;
     isRefetching: boolean;
     status: UseQueryResult<TypeFetch, Error>["status"];
+    fetchStatus: UseQueryResult<TypeFetch, Error>["fetchStatus"];
     refetch: UseQueryResult<TypeFetch, Error>["refetch"];
     // You can add other useQuery result properties here as needed
   };
@@ -170,6 +170,7 @@ export function useStateManagementFetch<TypeFetch, TypeMutate = any>({
       error: fetchingData.error,
       isRefetching: fetchingData.isRefetching,
       status: fetchingData.status,
+      fetchStatus: fetchingData.fetchStatus,
       refetch: fetchingData.refetch,
     },
   };
