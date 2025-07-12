@@ -8,6 +8,10 @@ const useWebSocket = () => {
     "ws-status",
     "Disconnected"
   );
+  const { setValue: setWSClientId } = useStateManagement<any>(
+    "ws-client-id",
+    ""
+  );
   const { setValue: setOBSStatus } = useStateManagement<any>(
     "ws-obs-status",
     "Disconnected"
@@ -46,6 +50,7 @@ const useWebSocket = () => {
           );
           if (wsMessage.type === "relay_connection_status") {
             setWSProfile(wsMessage.data.profile);
+            setWSClientId(wsMessage.data.clientId);
           }
           if (wsMessage.type === "relay_connection_profiles") {
             setWSProfiles(wsMessage.profiles);

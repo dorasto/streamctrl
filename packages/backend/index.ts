@@ -31,7 +31,7 @@ app.use(
   cors({
     origin: "http://localhost:5173",
     allowHeaders: [],
-    allowMethods: ["POST", "GET", "OPTIONS"],
+    allowMethods: ["POST", "GET", "PATCH", "OPTIONS"],
     exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
     maxAge: 600,
     credentials: true,
@@ -55,7 +55,8 @@ app.use("/api/*", async (c, next) => {
   return next();
 });
 // Store connected frontend WebSocket clients
-export const frontendClients = new Set<WSContext<WebSocket>>();
+// export const frontendClients = new Set<WSContext<WebSocket>>();
+export const frontendClients = new Map<string, WSContext<WebSocket>>(); // Key: clientId, Value: WebSocket
 db.select()
   .from(schema.profile)
   .then(async (data) => {
@@ -187,14 +188,15 @@ app.get(
           return;
         }
         console.log("Frontend client connected!");
-        frontendClients.add(ws);
+        const clientId = crypto.randomUUID(); // Generate the clientId here
+        frontendClients.set(clientId, ws);
         // On new frontend connection, send initial relay status and current OBS status
         ws.send(
           JSON.stringify({
             type: "relay_connection_status", // Relay's own connection to frontend
             data: {
               status: "connected",
-              clientId: crypto.randomUUID(),
+              clientId: clientId,
               profile: {
                 id: currentObsProfile.id,
                 name: currentObsProfile.name,
@@ -234,7 +236,12 @@ app.get(
       },
       onClose: (evt, ws) => {
         console.log("Frontend client disconnected!");
-        frontendClients.delete(ws);
+        for (const [clientId, clientWs] of frontendClients.entries()) {
+          if (clientWs === ws) {
+            frontendClients.delete(clientId);
+            break;
+          }
+        }
       },
       async onMessage(evt, ws) {
         let wsMessage: any;
@@ -336,7 +343,12 @@ app.get(
           "Frontend WebSocket Error:",
           errorEvent.error || evt.type
         );
-        frontendClients.delete(ws);
+        for (const [clientId, clientWs] of frontendClients.entries()) {
+          if (clientWs === ws) {
+            frontendClients.delete(clientId);
+            break;
+          }
+        }
       },
     };
   })

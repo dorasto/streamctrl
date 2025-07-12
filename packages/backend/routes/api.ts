@@ -1,12 +1,7 @@
 import { Hono } from "hono";
-import { connectToObs, currentObsProfile, obsWsConnected } from "../obs"; // Assuming 'obs' related imports are at the same level or relative path
+import { currentObsProfile, obsWsConnected } from "../obs"; // Assuming 'obs' related imports are at the same level or relative path
 import { auth } from "../auth"; // Assuming 'auth' is also relative to 'src'
-import {
-  dbObsProfiles,
-  sendObsRequestToBackend,
-  setDbObsActions,
-  setDbObsProfiles,
-} from "..";
+import { frontendClients, sendObsRequestToBackend, setDbObsActions } from "..";
 import { db, schema } from "db";
 import { eq, ne, sql } from "drizzle-orm";
 
@@ -30,6 +25,44 @@ apiRoutes.post("/actions", async (c) => {
     .where(sql`${schema.action.profileIds} ?| array[${profile_id}]::text[]`);
   setDbObsActions(actions);
   return c.json(actions);
+});
+apiRoutes.patch("/actions", async (c) => {
+  const { client_id, data } = await c.req.json();
+  if (!Array.isArray(data) || data.length === 0) {
+    return c.json({ error: "Invalid or empty data array provided." }, 400);
+  }
+  try {
+    // Start a Drizzle transaction
+    await db.transaction(async (tx) => {
+      for (const item of data) {
+        // Update the 'sort' field for each item by its ID
+        await tx
+          .update(schema.action)
+          .set({ sort: item.sort }) // Set the new sort order
+          .where(eq(schema.action.id, item.id)); // Find the item by its ID
+      }
+    });
+    frontendClients.forEach((client, id) => {
+      if (client.readyState === WebSocket.OPEN && client_id !== id) {
+        client.send(
+          JSON.stringify({
+            type: "relay_connection_update_actions", // Relay's own connection to frontend
+          })
+        );
+      }
+    });
+    return c.json({ message: "Action sort orders updated successfully." });
+  } catch (error) {
+    console.error("Error updating action sort orders:", error);
+    // Return a more descriptive error if needed for debugging
+    return c.json(
+      {
+        error: "Failed to update action sort orders.",
+        details: (error as Error).message,
+      },
+      500
+    );
+  }
 });
 
 apiRoutes.get("/refresh-actions", async (c) => {

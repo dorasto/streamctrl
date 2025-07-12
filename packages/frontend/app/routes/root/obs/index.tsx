@@ -6,8 +6,10 @@ import {
   useStateManagement,
   useStateManagementFetch,
 } from "~/hooks/useStateManagement";
-import { Button } from "~/components/ui/button";
 import { Loader2 } from "lucide-react";
+import SortActions from "~/components/actions/sort";
+import { useLayoutData } from "~/utils/Context";
+import { useEffect } from "react";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -16,11 +18,13 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 export default function ObsPage() {
+  const { ws } = useLayoutData();
   const { groupId } = useParams();
+  const { value: WSClientId } = useStateManagement<string>("ws-client-id", "");
   const { value: WSProfiles } = useStateManagement<any[]>("ws-profiles", []);
   const profile = WSProfiles.find((e) => e.id === groupId);
   const {
-    value: { data: Actions, refetch: refetchActions },
+    value: { data: actions, refetch: refetchActions },
     mutate,
   } = useStateManagementFetch<any[]>({
     key: ["actions-" + profile?.id],
@@ -55,12 +59,13 @@ export default function ObsPage() {
       },
     },
     mutate: {
-      url: import.meta.env.VITE_API_URL + "scenes",
-      custom: async (url, newTodoData) => {
+      url: import.meta.env.VITE_API_URL + "actions",
+      custom: async (url, actions) => {
         const res = await fetch(url, {
-          method: "GET",
+          method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ client_id: WSClientId, data: actions }),
         });
         if (!res.ok) throw new Error("Failed to add todo");
         return res.json();
@@ -68,6 +73,36 @@ export default function ObsPage() {
     },
     refetchOnWindowFocus: true,
   });
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    // Make sure 'ws' is not null or undefined before adding the event listener
+    if (ws) {
+      ws.addEventListener(
+        "message",
+        (e) => {
+          let wsMessage;
+          try {
+            wsMessage = JSON.parse(e.data);
+          } catch (e) {
+            console.error("Failed to parse WebSocket message:", e);
+            return;
+          }
+          if (wsMessage.type === "relay_connection_update_actions") {
+            refetchActions();
+          }
+        },
+        { signal: abortController.signal }
+      );
+    }
+    // Return a cleanup function that calls abortController.abort()
+    return () => {
+      // This function will be called when the component unmounts
+      // or when 'ws' or 'refetchActions' dependencies change.
+      console.log("Aborting WebSocket event listener...");
+      abortController.abort();
+    };
+  }, [ws, refetchActions]); // Dependencies
   if (profile?.id === undefined) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -87,18 +122,7 @@ export default function ObsPage() {
           </Badge>
         </CardContent>
       </Card>
-      <Button
-        onClick={() => {
-          mutate?.(["test", ""]);
-        }}
-      >
-        Test
-      </Button>
-      {Actions?.sort((a, b) => a.sort - b.sort)?.map((action, index) => (
-        <div key={index}>
-          {action.name} | {action.active ? "ON" : "OFF"}
-        </div>
-      ))}
+      <SortActions _actions={actions || []} mutate={mutate} />
     </div>
   );
 }
