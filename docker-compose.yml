@@ -31,7 +31,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: ./packages/backend/Dockerfile # Path to your backend Dockerfile
+      dockerfile: ./Dockerfile_backend # Path to your backend Dockerfile
     container_name: streamctrl_backend
     expose:
       - "5468" # Expose port 5468 to other containers
