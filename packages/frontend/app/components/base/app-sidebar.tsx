@@ -13,6 +13,7 @@ import {
   SidebarProvider,
 } from "./sidebar";
 import { useIsMobile } from "~/hooks/use-mobile";
+import { useStateManagement } from "~/hooks/useStateManagement";
 
 import { useLocation, matchPath, Link, redirect } from "react-router";
 import { cn } from "~/lib/utils";
@@ -29,6 +30,8 @@ export default function AppSidebar() {
   const { data: session } = auth.authClient.useSession() as {
     data: ISession | null;
   };
+  const { value: WSProfiles } = useStateManagement<any[]>("ws-profiles", []);
+
   return (
     <Sidebar
       collapsible="offcanvas"
@@ -57,21 +60,24 @@ export default function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  size={"lg"}
-                  asChild
-                  //   isActive={
-                  //     matchPath(`/${item.name}`, useLocation().pathname) !==
-                  //     null
-                  //   }
-                >
-                  <Link to={``}>
-                    {/* <Icon /> */}
-                    test
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {WSProfiles.map((profile, index) => (
+                <SidebarMenuItem key={index}>
+                  <SidebarMenuButton
+                    size={"lg"}
+                    isActive={
+                      matchPath(
+                        "/group/" + profile.id,
+                        useLocation().pathname
+                      ) !== null
+                    }
+                    asChild
+                  >
+                    <Link to={"/group/" + profile.id} key={index}>
+                      {profile.name}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -99,7 +105,7 @@ export default function AppSidebar() {
           </SidebarGroup>
         )}
       </SidebarContent>
-      <SidebarFooter className="bg-card rounded-b-md border-t">
+      <SidebarFooter className="bg-card border-t">
         <SidebarMenu></SidebarMenu>
         <SidebarMenu>
           <SidebarMenuItem>
