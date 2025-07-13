@@ -34,7 +34,7 @@ export default function AppSidebar() {
       collapsible="offcanvas"
       variant="sidebar"
       side="left"
-      className="w-full !max-h-[calc(100svh-var(--header-height))]"
+      className="w-full !max-h-[calc(100svh-var(--header-height))] group-data-[state=collapsed]:w-0 transition-all duration-150"
       dataSidebarClassName="!border-transparent !shadow-none"
     >
       <SidebarHeader>
