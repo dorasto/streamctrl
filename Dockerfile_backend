@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy package.json, bun.lockb, and the packages directory
 # This ensures the entire workspace structure is available
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 COPY packages packages/
 
 # Install dependencies for the entire workspace
