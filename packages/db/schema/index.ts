@@ -42,4 +42,5 @@ export const action = pgTable("action", {
   triggers: jsonb("triggers").notNull().default([]),
   actions: jsonb("actions").notNull().default([]),
   sort: numeric("sort"),
+  group_name: text("group_name").notNull().default(""),
 });

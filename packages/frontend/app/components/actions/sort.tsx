@@ -17,6 +17,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./item"; // Assuming './item' is where SortableItem is located
+import { useLayoutData } from "~/utils/Context";
 
 export default function SortActions({
   _actions,
@@ -25,6 +26,7 @@ export default function SortActions({
   _actions: any[];
   mutate: ((newValue: any, options?: any) => void) | undefined;
 }) {
+  const { ws } = useLayoutData();
   const [actions, setActions] = useState<any[]>([]);
   useEffect(() => {
     setActions(_actions);
@@ -36,7 +38,11 @@ export default function SortActions({
     : null;
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 10,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -91,7 +97,19 @@ export default function SortActions({
             }}
           >
             {actions.map((item) => (
-              <SortableItem key={item.id} id={item.id} item={item} />
+              <SortableItem
+                key={item.id}
+                id={item.id}
+                item={item}
+                onClick={(e) => {
+                  ws?.send(
+                    JSON.stringify({
+                      type: "test_action",
+                      id: item.id,
+                    })
+                  );
+                }}
+              />
             ))}
           </div>
         </SortableContext>

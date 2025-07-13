@@ -336,6 +336,24 @@ app.get(
             );
           }
         }
+        if (wsMessage.type == "test_action") {
+          const actionResult = await db
+            .select()
+            .from(schema.action)
+            .where(eq(schema.action.id, wsMessage.id));
+          if (actionResult) {
+            const singleAction = actionResult[0]; // This will be the object or undefined
+            if (singleAction) {
+              //@ts-expect-error
+              singleAction?.actions.map((e: any) => {
+                sendObsRequestToBackend(e.type, {
+                  ...e.settings,
+                  sceneItemEnabled: false,
+                });
+              });
+            }
+          }
+        }
       },
       onError: (evt, ws) => {
         const errorEvent = evt as Event & { error?: any };

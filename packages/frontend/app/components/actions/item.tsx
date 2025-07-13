@@ -8,6 +8,7 @@ interface SortableItemProps {
   isOverlayItem?: boolean;
   isLocked?: boolean;
   activeId?: string | null; // Add activeId prop
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
 // SortableItem.tsx
@@ -83,6 +84,7 @@ export function SortableItem(props: SortableItemProps) {
       style={style}
       {...finalAttributes}
       {...finalListeners}
+      onClick={props?.onClick}
     >
       ID: {props.item.id.substring(0, 8)}... | Name: {props.item.name} | Sort:{" "}
       {props.item.sort}
