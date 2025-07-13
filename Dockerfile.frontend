@@ -1,4 +1,4 @@
-# File: Dockerfile.frontend (Place this in your `frontend` directory)
+# File: Dockerfile.frontend
 
 # --- Build Stage ---
 FROM node:20-alpine AS build
@@ -7,21 +7,31 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy global package.json and lockfile
-# This helps with monorepo setup for dependency caching
-COPY package.json bun.lock ./
+COPY package.json ./
+# IMPORTANT: If you're switching to NPM, remove bun.lockb from this copy unless you have a specific reason
+# to keep it AND your npm is configured to use it (uncommon).
+# So, REMOVE `bun.lockb` from the COPY list for now.
+# COPY bun.lockb ./ # <-- COMMENT OR REMOVE THIS LINE if you're not using npm with bun.lockb
+
+# Copy packages directory (needs to be available for workspace linking during install)
 COPY packages packages/
 
-# Change to npm/yarn/pnpm for installation
-# For this example, we'll assume npm as it's default with node
-# You might need to change 'npm install' to 'yarn install' or 'pnpm install'
-# if your monorepo uses a different package manager at the root level.
-RUN npm install # Install root-level dependencies and link workspace packages
+# Ensure a clean slate for npm install
+# Remove existing node_modules directories, both at root and within packages
+RUN rm -rf node_modules packages/*/node_modules
+
+# Try installing with --legacy-peer-deps for now if peer dependency conflicts are an issue
+# Also, try --verbose to get more output
+RUN npm install --verbose --legacy-peer-deps
+
+# ... rest of your Dockerfile remains the same for now ...
+# Set the production environment
+ENV NODE_ENV=production
 
 # Navigate into the specific frontend package for building
 WORKDIR /app/packages/frontend
 
 # Run the build command for the frontend package
-# Ensure this script correctly bundles your server-side code
 RUN npm run build
 
 # --- Production Stage ---
@@ -31,30 +41,12 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 # Copy only necessary files from the build stage
-# Copy the compiled build output from the frontend package
 COPY --from=build /app/packages/frontend/build ./packages/frontend/build
-
-# Copy relevant package.json for runtime dependencies
-# This is crucial so your server can find its node_modules
 COPY --from=build /app/packages/frontend/package.json ./packages/frontend/package.json
-
-# If 'react-router-serve' or other runtime dependencies are *not* included in your frontend's `node_modules`
-# within the build output (which they often aren't for production builds),
-# you might need to copy all node_modules or just the necessary ones.
-# The safest way is to reinstall production dependencies here if your build step doesn't handle them.
-# Let's assume for now `react-router-serve` is a dev dependency used by 'bun start'
-# and the actual server code in 'build/server/index.js' has minimal runtime dependencies.
-# If you run into "module not found" errors at runtime, you'll need this:
 COPY --from=build /app/packages/frontend/node_modules ./packages/frontend/node_modules
-# OR, more explicitly if your `npm install` for production is lighter:
-# WORKDIR /app/packages/frontend
-# RUN npm install --production
 
-# If you copy node_modules from the build stage, your root package.json and workspaces are not needed here.
-# However, if your server needs to import from workspace packages (e.g., 'db', 'backend'),
-# you'd need to copy their `build` outputs and `node_modules` too.
-# For simplicity, we'll assume the frontend build output is self-contained.
 # If your server requires `db` or `backend` code, you will need to copy those as well.
+# Assuming build outputs are in `dist` or `build` in those packages
 COPY --from=build /app/packages/backend/build ./packages/backend/build
 COPY --from=build /app/packages/db/build ./packages/db/build
 
@@ -65,10 +57,4 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Define the command to start your frontend server
-# Make sure this command points to the correct entry point within the final image structure
-# As per your original setup, it's `react-router-serve ./build/server/index.js`
-# This requires `react-router-serve` to be in your final image's node_modules.
-# The previous `COPY --from=build ... node_modules` should handle this.
-CMD ["node", "./packages/frontend/build/server/index.js"] # This assumes the 'start' script can be replaced by direct node execution
-# Or if react-router-serve needs to be an explicit dependency in production:
-# CMD ["npm", "start", "--prefix", "./packages/frontend"] # This means you need a full npm in production, heavier.
+CMD ["node", "./packages/frontend/build/server/index.js"]
