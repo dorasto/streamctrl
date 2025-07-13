@@ -4,7 +4,13 @@ FROM oven/bun:latest
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
+# Copy package.json and bun.lockb first to leverage Docker cache
+COPY package.json bun.lockb ./
+
+# Install dependencies
+RUN bun install
+
+# Copy the rest of the application files
 COPY . .
 
 # Run the build command
