@@ -13,12 +13,14 @@ FROM node:20-alpine AS development_deps
 
 WORKDIR /app
 
-# Copy only package.json. Since package-lock.json is not committed, we omit it.
+# Copy only package.json.
+# WARNING: Not copying package-lock.json makes builds less deterministic.
+# If you encounter "works on my machine but not in Docker" issues, consider committing it.
 COPY package.json ./
 
 # Install all dependencies (including devDependencies).
 # `npm install` will resolve dependencies based on package.json and
-# generate a new package-lock.json inside the container (which won't be used outside this stage).
+# generate a new package-lock.json inside the container for this specific build.
 RUN npm install
 
 # --- Stage 2: Build the application ---
@@ -31,22 +33,30 @@ COPY package.json ./
 # Copy the node_modules from the development_deps stage.
 COPY --from=development_deps /app/node_modules ./node_modules
 # Copy all application source code.
+# The .dockerignore file should prevent unnecessary files from being copied.
 COPY . .
 
 # Run the build command as defined in package.json.
+# If this step fails, the error message from your build tool (e.g., Webpack, Babel)
+# will be visible in the Docker build logs. Check those logs for specifics.
 RUN npm run build
+
+# You can uncomment and use these commands for debugging if 'npm run build' fails:
+# RUN ls -la /app/build
+# RUN find /app/build -maxdepth 2
 
 # --- Stage 3: Install production dependencies ---
 # This stage installs only the production dependencies, resulting in a smaller node_modules.
 FROM node:20-alpine AS production_deps
 
 WORKDIR /app
-# Copy package.json. Since package-lock.json is not committed, we omit it.
+# Copy package.json.
+# WARNING: Not copying package-lock.json here also affects determinism for production deps.
 COPY package.json ./
 
 # Install only production dependencies.
 # `npm install --omit=dev` will resolve production dependencies based on package.json
-# and generate a new package-lock.json inside the container.
+# and generate a new package-lock.json inside the container for this specific install.
 RUN npm install --omit=dev
 
 # --- Stage 4: Final production image (Runner) ---
@@ -59,15 +69,28 @@ WORKDIR /app
 COPY --from=production_deps /app/node_modules ./node_modules
 
 # Copy the built application from the build_output stage.
+# Assuming 'react-router build' outputs to a 'build' directory at the project root.
 COPY --from=build_output /app/build ./build
 
+# If your 'npm start' command or application requires other files
+# that are not part of the 'build' output (e.g., static assets in a 'public' folder
+# that are not processed by the build tool), you might need to copy them from
+# the 'build_output' stage or directly from your source.
+# Example: COPY --from=build_output /app/public ./public
+
 # Copy package.json if your start script or application requires it at runtime
+# (e.g., to read name, version, or other metadata).
 COPY package.json ./
 
 # Define the command to start the application.
+# This uses 'npm start', which will execute 'react-router-serve ./build/server/index.js'
+# as defined in your package.json scripts.
 CMD ["npm", "run", "start"]
 
 # Note on .env files:
 # Docker builds typically do not embed .env files directly into the image for security.
-# Environment variables should be passed at runtime using -e, --env-file, or through Kubernetes/orchestration.
+# Environment variables (like PORT, NODE_ENV, etc.) should be passed at runtime using:
+#   -e ENV_VAR=value
+#   --env-file ./path/to/.env
+# or through your orchestration system (Kubernetes, Docker Compose, etc.).
 # Your react-router-serve process (when run by Node.js) will automatically pick up system environment variables.
