@@ -191,7 +191,7 @@ export default function ObsPage() {
           <ResizablePanel defaultSize={75}>
             <div className="flex flex-col w-full h-full min-w-full bg-card rounded-md border px-3">
               <div className="border-b p-3 flex items-center gap-2 w-full">
-                <Label variant={"heading"}>Events</Label>
+                <Label variant={"heading"}>Steps</Label>
               </div>
               <div className="flex-1 overflow-y-auto py-3">
                 {/* <SortActions _actions={actions || []} mutate={mutate} /> */}
