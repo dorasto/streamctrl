@@ -6,7 +6,7 @@ import {
   useStateManagement,
   useStateManagementFetch,
 } from "~/hooks/useStateManagement";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import SortActions from "~/components/actions/sort";
 import { useLayoutData } from "~/utils/Context";
 import { useEffect } from "react";
@@ -16,6 +16,13 @@ import {
   ResizablePanelGroup,
 } from "~/components/ui/resizable";
 import { Label } from "~/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -125,6 +132,42 @@ export default function ObsPage() {
         <div className="flex flex-col w-full h-full min-w-full bg-card rounded-md border px-3">
           <div className="border-b p-3 flex items-center gap-2 w-full">
             <Label variant={"heading"}>Actions</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"default"}
+                  size="icon"
+                  className="ml-auto data-[state=open]:bg-secondary/70"
+                >
+                  <Plus />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                side="right"
+                className="p-0 flex flex-col gap-3"
+              >
+                <div className="border-b p-3">
+                  <Label variant={"subtext"}>New action</Label>
+                </div>
+                <div className="px-3 pb-3 flex flex-col gap-3">
+                  <div className="group relative">
+                    <label
+                      htmlFor={"action-name"}
+                      className="bg-popover text-muted-foreground/70 absolute start-1 top-0 z-10 block -translate-y-1/2 px-2 text-xs font-medium group-has-disabled:opacity-50"
+                    >
+                      Name
+                    </label>
+                    <Input
+                      id={"action-name"}
+                      className="h-12 !bg-popover placeholder:text-muted-foreground/70"
+                      placeholder="My Action"
+                    />
+                  </div>
+                  <Button>Create</Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex-1 overflow-y-auto py-3">
             <SortActions _actions={actions || []} mutate={mutate} />
