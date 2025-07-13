@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "backend:start": "cd packages/backend && bun run index.ts",
-    "frontend:dev": "cd packages/frontend && bun install && bun run dev"
+    "frontend:dev": "cd packages/frontend && bun install && bun run dev",
+    "db:studio": "cd packages/db && bun run studio"
   }
 }
