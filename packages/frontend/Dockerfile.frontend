@@ -7,90 +7,86 @@
 # .env
 # etc.
 
-# --- Stage 1: Base image for installing development dependencies ---
-# This stage installs all (dev and prod) dependencies needed for building and type checking.
-FROM node:20-alpine AS development_deps
+# --- Stage 1: Base image for all stages ---
+FROM node:22-alpine AS base
+
+# Install libc6-compat for some Node.js native add-ons on Alpine
+RUN apk add --no-cache libc6-compat
+
+# --- Stage 2: Install development dependencies ---
+FROM base AS development_deps
 
 WORKDIR /app
 
-# Copy only package.json.
-# WARNING: Not copying package-lock.json makes builds less deterministic.
-# If you encounter "works on my machine but not in Docker" issues, consider committing it.
+# Copy only package.json. No lock files used as per your instruction.
+# WARNING: Omitting lock files can lead to non-deterministic builds.
 COPY package.json ./
 
 # Install all dependencies (including devDependencies).
-# `npm install` will resolve dependencies based on package.json and
-# generate a new package-lock.json inside the container for this specific build.
 RUN npm install
 
-# --- Stage 2: Build the application ---
-# This stage takes the development dependencies and the source code to produce the build output.
-FROM node:20-alpine AS build_output
+# --- Stage 3: Build the application ---
+FROM base AS builder
 
 WORKDIR /app
-# Copy package.json again for scripts access, and for npm to correctly identify the project.
-COPY package.json ./
-# Copy the node_modules from the development_deps stage.
+# Copy installed node_modules from the deps stage
 COPY --from=development_deps /app/node_modules ./node_modules
-# Copy all application source code.
-# The .dockerignore file should prevent unnecessary files from being copied.
+# Copy all application source code
 COPY . .
+# Copy .env file if it's explicitly needed for the build process
+# IMPORTANT: Be cautious about committing sensitive .env data.
+# For production, env vars should ideally be passed at runtime.
+COPY .env /app/.env
+
+# Set build-time environment variables.
+# NODE_OPTIONS for memory, NODE_ENV for production mode.
+ENV NODE_OPTIONS="--max_old_space_size=8192"
+ENV NODE_ENV=production
 
 # Run the build command as defined in package.json.
-# If this step fails, the error message from your build tool (e.g., Webpack, Babel)
-# will be visible in the Docker build logs. Check those logs for specifics.
+# This assumes your 'npm run build' generates 'build/server/index.js' and client assets.
+# If this fails, you need to examine the logs carefully.
 RUN npm run build
 
-# You can uncomment and use these commands for debugging if 'npm run build' fails:
-# RUN ls -la /app/build
-# RUN find /app/build -maxdepth 2
-
-# --- Stage 3: Install production dependencies ---
-# This stage installs only the production dependencies, resulting in a smaller node_modules.
-FROM node:20-alpine AS production_deps
+# --- Stage 4: Install production dependencies ---
+FROM base AS production_deps
 
 WORKDIR /app
-# Copy package.json.
-# WARNING: Not copying package-lock.json here also affects determinism for production deps.
+# Copy only package.json for production dependency installation.
 COPY package.json ./
 
 # Install only production dependencies.
-# `npm install --omit=dev` will resolve production dependencies based on package.json
-# and generate a new package-lock.json inside the container for this specific install.
 RUN npm install --omit=dev
 
-# --- Stage 4: Final production image (Runner) ---
-# This is the leanest image, containing only what's necessary to run the application.
-FROM node:20-alpine AS runner
+# --- Stage 5: Final production image (Runner) ---
+FROM base AS runner
 
 WORKDIR /app
 
-# Copy only the production-ready node_modules.
+# Copy production-ready node_modules.
 COPY --from=production_deps /app/node_modules ./node_modules
 
-# Copy the built application from the build_output stage.
-# Assuming 'react-router build' outputs to a 'build' directory at the project root.
-COPY --from=build_output /app/build ./build
+# Copy the built application from the builder stage.
+# This typically includes both server-side (index.js) and client-side (static) assets.
+# Adjust /app/build if your build script outputs to a different directory.
+COPY --from=builder /app/build ./build
 
-# If your 'npm start' command or application requires other files
-# that are not part of the 'build' output (e.g., static assets in a 'public' folder
-# that are not processed by the build tool), you might need to copy them from
-# the 'build_output' stage or directly from your source.
-# Example: COPY --from=build_output /app/public ./public
-
-# Copy package.json if your start script or application requires it at runtime
-# (e.g., to read name, version, or other metadata).
+# Copy package.json if your start script requires it at runtime
 COPY package.json ./
 
-# Define the command to start the application.
-# This uses 'npm start', which will execute 'react-router-serve ./build/server/index.js'
-# as defined in your package.json scripts.
+# Set runtime environment variables
+ENV NODE_ENV production
+# Set a default port, can be overridden at runtime
+ENV PORT 3000
+EXPOSE 3000
+
+# Define the command to start the application using react-router-serve.
+# This expects your 'package.json' to have a script like:
+# "start": "react-router-serve ./build/server/index.js"
 CMD ["npm", "run", "start"]
 
-# Note on .env files:
-# Docker builds typically do not embed .env files directly into the image for security.
-# Environment variables (like PORT, NODE_ENV, etc.) should be passed at runtime using:
-#   -e ENV_VAR=value
-#   --env-file ./path/to/.env
-# or through your orchestration system (Kubernetes, Docker Compose, etc.).
-# Your react-router-serve process (when run by Node.js) will automatically pick up system environment variables.
+# --- Final Checks ---
+# - Ensure your .dockerignore is correctly set up to exclude node_modules, .git, etc.
+# - The 'npm run build' script in your package.json must produce the 'build' directory
+#   with 'server/index.js' and your static client assets.
+# - If build fails, get the full logs!
