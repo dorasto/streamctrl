@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Copy global package.json and lockfile
 # This helps with monorepo setup for dependency caching
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 COPY packages packages/
 
 # Change to npm/yarn/pnpm for installation
