@@ -1,87 +1,22 @@
-# .dockerignore should be in the same directory as this Dockerfile
-# and contain entries like:
-# node_modules/
-# dist/
-# build/
-# .git/
-# .env
-# etc.
-
-# --- Stage 1: Base image for all stages ---
-FROM node:22-alpine AS base
-
-# Install libc6-compat for some Node.js native add-ons on Alpine
-RUN apk add --no-cache libc6-compat
-
-# --- Stage 2: Install development dependencies ---
-FROM base AS development_deps
-
+FROM node:20-alpine AS development-dependencies-env
+COPY . /app
 WORKDIR /app
+RUN npm ci
 
-# Copy only package.json. No lock files used as per your instruction.
-# WARNING: Omitting lock files can lead to non-deterministic builds.
-COPY package.json ./
-
-# Install all dependencies (including devDependencies).
-RUN npm install
-
-# --- Stage 3: Build the application ---
-FROM base AS builder
-
+FROM node:20-alpine AS production-dependencies-env
+COPY ./package.json /app/
 WORKDIR /app
-# Copy installed node_modules from the deps stage
-COPY --from=development_deps /app/node_modules ./node_modules
-# Copy all application source code
-COPY . .
-# Set build-time environment variables.
-# NODE_OPTIONS for memory, NODE_ENV for production mode.
-ENV NODE_OPTIONS="--max_old_space_size=8192"
-ENV NODE_ENV=production
+RUN npm ci --omit=dev
 
-# Run the build command as defined in package.json.
-# This assumes your 'npm run build' generates 'build/server/index.js' and client assets.
-# If this fails, you need to examine the logs carefully.
+FROM node:20-alpine AS build-env
+COPY . /app/
+COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+WORKDIR /app
 RUN npm run build
 
-# --- Stage 4: Install production dependencies ---
-FROM base AS production_deps
-
+FROM node:20-alpine
+COPY ./package.json package-lock.json /app/
+COPY --from=production-dependencies-env /app/node_modules /app/node_modules
+COPY --from=build-env /app/build /app/build
 WORKDIR /app
-# Copy only package.json for production dependency installation.
-COPY package.json ./
-
-# Install only production dependencies.
-RUN npm install --omit=dev
-
-# --- Stage 5: Final production image (Runner) ---
-FROM base AS runner
-
-WORKDIR /app
-
-# Copy production-ready node_modules.
-COPY --from=production_deps /app/node_modules ./node_modules
-
-# Copy the built application from the builder stage.
-# This typically includes both server-side (index.js) and client-side (static) assets.
-# Adjust /app/build if your build script outputs to a different directory.
-COPY --from=builder /app/build ./build
-
-# Copy package.json if your start script requires it at runtime
-COPY package.json ./
-
-# Set runtime environment variables
-ENV NODE_ENV production
-# Set a default port, can be overridden at runtime
-ENV PORT 3000
-EXPOSE 3000
-
-# Define the command to start the application using react-router-serve.
-# This expects your 'package.json' to have a script like:
-# "start": "react-router-serve ./build/server/index.js"
 CMD ["npm", "run", "start"]
-
-# --- Final Checks ---
-# - Ensure your .dockerignore is correctly set up to exclude node_modules, .git, etc.
-# - The 'npm run build' script in your package.json must produce the 'build' directory
-#   with 'server/index.js' and your static client assets.
-# - If build fails, get the full logs!
