@@ -8,24 +8,29 @@ services:
     ports:
       - "4575:80" # Map host port 80 to container port 80
     depends_on:
-      # - frontend # Ensure frontend is up before Nginx tries to proxy to it
+      - frontend # Ensure frontend is up before Nginx tries to proxy to it
       - backend # Ensure backend is up before Nginx tries to proxy to it
 
-  # frontend:
-  #   build:
-  #     context: .
-  #     dockerfile: ./packages/frontend/Dockerfile # Path to your frontend Dockerfile
-  #   container_name: streamctrl_frontend
-  #   # No ports mapping needed if only Nginx accesses it directly in Docker network
-  #   # You might expose it for local debugging, but not in production for Nginx to handle.
-  #   expose:
-  #     - "5173" # Expose port 5173 to other containers within the Docker network
-  #   environment:
-  #     # Pass environment variables to your React app if needed (e.g., API_BASE_URL)
-  #     # However, for proxied requests, the client-side code will still use relative paths
-  #     NODE_ENV: production
-  #   depends_on:
-  #     - backend # Frontend might depend on backend if it makes direct calls (unlikely with this setup)
+  frontend:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.frontend # Path to your frontend Dockerfile
+    container_name: streamctrl_frontend
+    # No ports mapping needed if only Nginx accesses it directly in Docker network
+    # You might expose it for local debugging, but not in production for Nginx to handle.
+    expose:
+      - "3000" # Expose port 5173 to other containers within the Docker network
+    environment:
+      # Pass environment variables to your React app if needed (e.g., API_BASE_URL)
+      # However, for proxied requests, the client-side code will still use relative paths
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET}
+      VITE_WS_URL: ${VITE_WS_URL}
+      VITE_API_URL: ${VITE_API_URL}
+    depends_on:
+      - backend # Frontend might depend on backend if it makes direct calls (unlikely with this setup)
 
   backend:
     build:
