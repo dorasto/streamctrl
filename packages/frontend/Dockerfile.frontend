@@ -1,40 +1,26 @@
-# .dockerignore should be in the same directory as this Dockerfile
-# and contain entries like:
-# node_modules/
-# dist/
-# build/
-# .git/
-# .env
-# etc.
-
-# --- Stage 1: Base image with pnpm installed ---
-# This stage is responsible for installing pnpm globally, which will be reused by other stages.
-FROM node:20-alpine AS base
-
-WORKDIR /app
-# Install pnpm globally. This is done once and cached.
-RUN npm i -g pnpm
-
-# --- Stage 2: Install development dependencies ---
+# --- Stage 1: Base image for installing development dependencies ---
 # This stage installs all (dev and prod) dependencies needed for building and type checking.
-FROM base AS development_deps
+# We'll install npm-i in this stage to ensure it's available.
+FROM node:20-alpine AS development_deps
 
 WORKDIR /app
-# Copy only package.json and pnpm-lock.yaml to leverage Docker's build cache.
+
+# Copy only package.json and package-lock.json to leverage Docker's build cache.
 # If these files don't change, this layer (and subsequent ones) will be cached.
-COPY package.json  ./
+# Ensure package-lock.json is present and up-to-date locally.
+COPY package.json ./
 
 # Install all dependencies (including devDependencies).
-# --frozen-lockfile ensures deterministic installs based on the lockfile.
-RUN pnpm i
+# `npm ci` is preferred over `npm install` in CI/CD environments
+# because it's faster and ensures deterministic installs based on package-lock.json.
+RUN npm ci
 
-# --- Stage 3: Build the application ---
+# --- Stage 2: Build the application ---
 # This stage takes the development dependencies and the source code to produce the build output.
-FROM base AS build_output
+FROM node:20-alpine AS build_output
 
 WORKDIR /app
-# Copy package.json again for scripts access, even though source will be copied.
-# This ensures that pnpm knows about the project structure.
+# Copy package.json again for scripts access, and for npm to correctly identify the project.
 COPY package.json ./
 # Copy the node_modules from the development_deps stage.
 COPY --from=development_deps /app/node_modules ./node_modules
@@ -45,27 +31,26 @@ COPY . .
 
 # Run the build command as defined in package.json.
 # This command uses 'react-router build'.
-RUN pnpm build
+RUN npm run build
 
 # You can add a command here to inspect the build output for debugging, e.g.:
 # RUN ls -la /app/build
 # RUN find /app/build -maxdepth 2 # For deeper inspection of build folder
 
-# --- Stage 4: Install production dependencies ---
+# --- Stage 3: Install production dependencies ---
 # This stage installs only the production dependencies, resulting in a smaller node_modules.
-FROM base AS production_deps
+FROM node:20-alpine AS production_deps
 
 WORKDIR /app
-# Copy package.json and pnpm-lock.yaml for production dependency installation.
+# Copy package.json and package-lock.json for production dependency installation.
 COPY package.json ./
 
 # Install only production dependencies.
-# --prod flag tells pnpm to exclude devDependencies.
-# --frozen-lockfile ensures deterministic installs.
-# --prefer-offline can speed up builds if packages are cached by pnpm.
-RUN pnpm i --prod
+# `--omit=dev` (or `--production`) tells npm to exclude devDependencies.
+# `npm ci` for production is still generally recommended for determinism.
+RUN npm ci --omit=dev
 
-# --- Stage 5: Final production image (Runner) ---
+# --- Stage 4: Final production image (Runner) ---
 # This is the leanest image, containing only what's necessary to run the application.
 FROM node:20-alpine AS runner
 
@@ -76,11 +61,9 @@ COPY --from=production_deps /app/node_modules ./node_modules
 
 # Copy the built application from the build_output stage.
 # Assuming 'react-router build' outputs to a 'build' directory at the project root.
-# Adjust the source path (/app/build) if your build output differs.
-# e.g., if it outputs to /app/dist, then COPY --from=build_output /app/dist ./dist
 COPY --from=build_output /app/build ./build
 
-# If your 'pnpm start' command or application requires other files
+# If your 'npm start' command or application requires other files
 # that are not part of the 'build' output (e.g., static assets in a 'public' folder
 # that are not processed by the build tool), you might need to copy them from
 # the 'build_output' stage or directly from your source.
@@ -91,5 +74,10 @@ COPY --from=build_output /app/build ./build
 COPY package.json ./
 
 # Define the command to start the application.
-# This uses 'pnpm start', which executes 'react-router-serve ./build/server/index.js'
-CMD ["pnpm", "start"]
+# This uses 'npm start', which executes 'react-router-serve ./build/server/index.js'
+CMD ["npm", "run", "start"]
+
+# Note on .env files:
+# Docker builds typically do not embed .env files directly into the image for security.
+# Environment variables should be passed at runtime using -e, --env-file, or through Kubernetes/orchestration.
+# Your react-router-serve process (when run by Node.js) will automatically pick up system environment variables.
