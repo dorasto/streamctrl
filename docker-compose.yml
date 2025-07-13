@@ -38,4 +38,7 @@ services:
     environment:
       # Any environment variables for your backend
       NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET}
     # Add database or other dependencies here

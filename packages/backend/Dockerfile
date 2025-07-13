@@ -1,28 +1,21 @@
-# Use Node.js 22 as the base image
-FROM node:23-alpine
+# Use the Bun image as the base image
+FROM oven/bun:latest
 
-# Set the working directory to /app
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and pnpm-lock.yaml from the root to install dependencies
-COPY ./package.json ./
+# Copy the current directory contents into the container at /app
+COPY . .
 
-# Install pnpm with specific version and install dependencies
-RUN corepack enable pnpm
-RUN pnpm approve-builds -g
-RUN pnpm install --prod 
-
-# Copy the backend source code into the container
-COPY ./ ./
-
-# Build the TypeScript code for the backend
-RUN pnpm build
+# Run the build command
+# This will likely create the 'dist' folder for your Hono application
+RUN bun run build
 
 # Set the production environment
 ENV NODE_ENV=production
 
-# Expose the application port (4000 for Fastify)
+# Expose the application port (Hono often defaults to 3000, but 4000 is fine if configured)
 EXPOSE 4000
 
-# Start the backend Fastify application
-CMD ["pnpm", "start"]
+# Start the Hono application from the 'dist' folder
+CMD ["bun", "dist/index.js"]

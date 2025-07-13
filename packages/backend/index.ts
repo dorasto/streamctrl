@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { serve } from "@hono/node-server";
+import { createBunWebSocket } from "hono/bun";
+//@ts-expect-error not sure why im getting this
+import type { ServerWebSocket } from "bun";
 import { serveStatic } from "hono/serve-static";
 import WebSocket from "ws"; // This is the 'ws' npm package's WebSocket
-import { createNodeWebSocket } from "@hono/node-ws";
 import fs from "fs"; // fs is needed for getContent in serveStatic
 import { WSContext } from "hono/ws";
 import { auth } from "./auth"; // Assuming 'auth' is still used for API security
@@ -168,7 +169,7 @@ app.get(
   })
 );
 app.route("/api/backend", apiRoutes);
-const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+const { upgradeWebSocket, websocket } = createBunWebSocket<ServerWebSocket>();
 
 // WebSocket endpoint for frontend clients (remains for real-time updates)
 app.get(
@@ -382,11 +383,8 @@ setInterval(() => {
     }
   });
 }, 30000);
-const server = serve({
-  fetch: app.fetch,
-  hostname: "0.0.0.0",
+export default {
   port: 5468,
-}).on("listening", () => {
-  console.log("Server is running on port 5468");
-});
-injectWebSocket(server);
+  fetch: app.fetch,
+  websocket,
+};
