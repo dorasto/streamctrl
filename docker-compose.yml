@@ -14,7 +14,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ./packages/frontend/Dockerfile.frontend # Path to your frontend Dockerfile
+      dockerfile: ./Dockerfile.frontend # Path to your frontend Dockerfile
     container_name: streamctrl_frontend
     # No ports mapping needed if only Nginx accesses it directly in Docker network
     # You might expose it for local debugging, but not in production for Nginx to handle.

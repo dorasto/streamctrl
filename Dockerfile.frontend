@@ -1,0 +1,68 @@
+# Stage 1: Build the frontend application
+FROM node:20-alpine AS frontend_builder
+
+# Set the overall project root as the initial working directory
+WORKDIR /app
+
+# Copy the entire workspace's package.json and node_modules (if present)
+# If your monorepo uses a single root package.json for workspaces:
+COPY package.json ./
+# If your monorepo has a bun.lockb or yarn.lock at root, copy that too.
+
+# Copy only the specific frontend package's package.json
+# This allows npm install to generate the lock file correctly for the frontend package.
+COPY packages/frontend/package.json packages/frontend/
+
+# Change working directory into the frontend package
+WORKDIR /app/packages/frontend
+
+# Install dependencies for the frontend package.
+# This will generate (or update) packages/frontend/package-lock.json.
+RUN npm install
+
+# Copy the rest of the frontend application source code.
+COPY packages/frontend/ .
+
+# Run the build script for the frontend package.
+# This will prepare the application for production, including server-side bundles.
+RUN npm run build
+
+
+# Stage 2: Create the final production Node.js image for the frontend
+FROM node:20-alpine AS production_frontend
+
+# Set the overall project root as the initial working directory
+WORKDIR /app
+
+# Copy the workspace's root package.json if it's needed for context
+COPY --from=frontend_builder /app/package.json ./
+
+# Copy the frontend package's package.json and generated lock file
+COPY --from=frontend_builder /app/packages/frontend/package.json packages/frontend/
+COPY --from=frontend_builder /app/packages/frontend/package-lock.json packages/frontend/
+
+# Navigate into the frontend package to install production dependencies
+WORKDIR /app/packages/frontend
+
+# Install only production dependencies for the frontend package.
+# This relies on the package-lock.json copied from the builder stage.
+RUN npm ci --omit=dev
+
+# Copy the *entire* build output for the frontend.
+# This typically includes both compiled server-side code and static assets.
+# IMPORTANT: Adjust '/app/packages/frontend/build' if your frontend build outputs
+# to a different directory (e.g., '/app/packages/frontend/.next' for Next.js).
+COPY --from=frontend_builder /app/packages/frontend/build ./build
+# If your 'start' script needs other files outside 'build' (e.g., a server.js in root),
+# copy them too:
+# COPY --from=frontend_builder /app/packages/frontend/server.js ./server.js
+# Or the full project, if the build process doesn't fully self-contain:
+# COPY --from=frontend_builder /app/packages/frontend/ .
+
+# Expose the application port
+EXPOSE 3000
+
+# Command to start the frontend application.
+# This assumes your 'packages/frontend/package.json' has a 'start' script
+# that can run the compiled SSR application.
+CMD ["npm", "run", "start"]
