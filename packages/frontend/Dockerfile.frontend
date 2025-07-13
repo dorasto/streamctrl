@@ -33,11 +33,6 @@ WORKDIR /app
 COPY --from=development_deps /app/node_modules ./node_modules
 # Copy all application source code
 COPY . .
-# Copy .env file if it's explicitly needed for the build process
-# IMPORTANT: Be cautious about committing sensitive .env data.
-# For production, env vars should ideally be passed at runtime.
-COPY .env /app/.env
-
 # Set build-time environment variables.
 # NODE_OPTIONS for memory, NODE_ENV for production mode.
 ENV NODE_OPTIONS="--max_old_space_size=8192"
