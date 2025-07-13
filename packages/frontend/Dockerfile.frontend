@@ -1,26 +1,95 @@
-FROM node:20-alpine AS dependencies-env
+# .dockerignore should be in the same directory as this Dockerfile
+# and contain entries like:
+# node_modules/
+# dist/
+# build/
+# .git/
+# .env
+# etc.
+
+# --- Stage 1: Base image with pnpm installed ---
+# This stage is responsible for installing pnpm globally, which will be reused by other stages.
+FROM node:20-alpine AS base
+
+WORKDIR /app
+# Install pnpm globally. This is done once and cached.
 RUN npm i -g pnpm
-COPY . /app
 
-FROM dependencies-env AS development-dependencies-env
-COPY ./package.json /app/
-WORKDIR /app
-RUN pnpm i
+# --- Stage 2: Install development dependencies ---
+# This stage installs all (dev and prod) dependencies needed for building and type checking.
+FROM base AS development_deps
 
-FROM dependencies-env AS production-dependencies-env
-COPY ./package.json /app/
 WORKDIR /app
-RUN pnpm i --prod 
+# Copy only package.json and pnpm-lock.yaml to leverage Docker's build cache.
+# If these files don't change, this layer (and subsequent ones) will be cached.
+COPY package.json pnpm-lock.yaml ./
 
-FROM dependencies-env AS build-env
-COPY ./package.json /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+# Install all dependencies (including devDependencies).
+# --frozen-lockfile ensures deterministic installs based on the lockfile.
+RUN pnpm i --frozen-lockfile
+
+# --- Stage 3: Build the application ---
+# This stage takes the development dependencies and the source code to produce the build output.
+FROM base AS build_output
+
 WORKDIR /app
+# Copy package.json again for scripts access, even though source will be copied.
+# This ensures that pnpm knows about the project structure.
+COPY package.json ./
+# Copy the node_modules from the development_deps stage.
+COPY --from=development_deps /app/node_modules ./node_modules
+# Copy all application source code.
+# This should be done *after* dependencies are in place to prevent issues
+# with existing node_modules from local environment.
+COPY . .
+
+# Run the build command as defined in package.json.
+# This command uses 'react-router build'.
 RUN pnpm build
 
-FROM dependencies-env
-COPY ./package.json  /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
+# You can add a command here to inspect the build output for debugging, e.g.:
+# RUN ls -la /app/build
+# RUN find /app/build -maxdepth 2 # For deeper inspection of build folder
+
+# --- Stage 4: Install production dependencies ---
+# This stage installs only the production dependencies, resulting in a smaller node_modules.
+FROM base AS production_deps
+
 WORKDIR /app
+# Copy package.json and pnpm-lock.yaml for production dependency installation.
+COPY package.json pnpm-lock.yaml ./
+
+# Install only production dependencies.
+# --prod flag tells pnpm to exclude devDependencies.
+# --frozen-lockfile ensures deterministic installs.
+# --prefer-offline can speed up builds if packages are cached by pnpm.
+RUN pnpm i --prod --frozen-lockfile --prefer-offline
+
+# --- Stage 5: Final production image (Runner) ---
+# This is the leanest image, containing only what's necessary to run the application.
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Copy only the production-ready node_modules.
+COPY --from=production_deps /app/node_modules ./node_modules
+
+# Copy the built application from the build_output stage.
+# Assuming 'react-router build' outputs to a 'build' directory at the project root.
+# Adjust the source path (/app/build) if your build output differs.
+# e.g., if it outputs to /app/dist, then COPY --from=build_output /app/dist ./dist
+COPY --from=build_output /app/build ./build
+
+# If your 'pnpm start' command or application requires other files
+# that are not part of the 'build' output (e.g., static assets in a 'public' folder
+# that are not processed by the build tool), you might need to copy them from
+# the 'build_output' stage or directly from your source.
+# Example: COPY --from=build_output /app/public ./public
+
+# Copy package.json if your start script or application requires it at runtime
+# (e.g., to read name, version, or other metadata).
+COPY package.json ./
+
+# Define the command to start the application.
+# This uses 'pnpm start', which executes 'react-router-serve ./build/server/index.js'
 CMD ["pnpm", "start"]

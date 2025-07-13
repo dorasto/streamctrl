@@ -2,3 +2,36 @@
 build
 node_modules
 README.md
+# Node.js specific
+npm-debug.log
+yarn-error.log
+.pnpm-store/ # If you use pnpm local store
+
+# Build outputs (these will be generated inside the container)
+dist/
+.output/ # Common output directory for some frameworks
+
+# Configuration and development files
+.env
+.env.*
+.DS_Store
+.vscode/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Version control
+.git/
+.gitignore
+
+# IDE and Editor files
+*.iml
+.idea/
+.project
+.classpath
+.c9/
+
+# Other temporary files
+tmp/
+temp/
