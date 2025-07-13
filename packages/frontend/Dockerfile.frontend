@@ -1,19 +1,25 @@
+# .dockerignore should be in the same directory as this Dockerfile
+# and contain entries like:
+# node_modules/
+# dist/
+# build/
+# .git/
+# .env
+# etc.
+
 # --- Stage 1: Base image for installing development dependencies ---
 # This stage installs all (dev and prod) dependencies needed for building and type checking.
-# We'll install npm-i in this stage to ensure it's available.
 FROM node:20-alpine AS development_deps
 
 WORKDIR /app
 
-# Copy only package.json and package-lock.json to leverage Docker's build cache.
-# If these files don't change, this layer (and subsequent ones) will be cached.
-# Ensure package-lock.json is present and up-to-date locally.
+# Copy only package.json. Since package-lock.json is not committed, we omit it.
 COPY package.json ./
 
 # Install all dependencies (including devDependencies).
-# `npm ci` is preferred over `npm install` in CI/CD environments
-# because it's faster and ensures deterministic installs based on package-lock.json.
-RUN npm ci
+# `npm install` will resolve dependencies based on package.json and
+# generate a new package-lock.json inside the container (which won't be used outside this stage).
+RUN npm install
 
 # --- Stage 2: Build the application ---
 # This stage takes the development dependencies and the source code to produce the build output.
@@ -25,30 +31,23 @@ COPY package.json ./
 # Copy the node_modules from the development_deps stage.
 COPY --from=development_deps /app/node_modules ./node_modules
 # Copy all application source code.
-# This should be done *after* dependencies are in place to prevent issues
-# with existing node_modules from local environment.
 COPY . .
 
 # Run the build command as defined in package.json.
-# This command uses 'react-router build'.
 RUN npm run build
-
-# You can add a command here to inspect the build output for debugging, e.g.:
-# RUN ls -la /app/build
-# RUN find /app/build -maxdepth 2 # For deeper inspection of build folder
 
 # --- Stage 3: Install production dependencies ---
 # This stage installs only the production dependencies, resulting in a smaller node_modules.
 FROM node:20-alpine AS production_deps
 
 WORKDIR /app
-# Copy package.json and package-lock.json for production dependency installation.
+# Copy package.json. Since package-lock.json is not committed, we omit it.
 COPY package.json ./
 
 # Install only production dependencies.
-# `--omit=dev` (or `--production`) tells npm to exclude devDependencies.
-# `npm ci` for production is still generally recommended for determinism.
-RUN npm ci --omit=dev
+# `npm install --omit=dev` will resolve production dependencies based on package.json
+# and generate a new package-lock.json inside the container.
+RUN npm install --omit=dev
 
 # --- Stage 4: Final production image (Runner) ---
 # This is the leanest image, containing only what's necessary to run the application.
@@ -60,21 +59,12 @@ WORKDIR /app
 COPY --from=production_deps /app/node_modules ./node_modules
 
 # Copy the built application from the build_output stage.
-# Assuming 'react-router build' outputs to a 'build' directory at the project root.
 COPY --from=build_output /app/build ./build
 
-# If your 'npm start' command or application requires other files
-# that are not part of the 'build' output (e.g., static assets in a 'public' folder
-# that are not processed by the build tool), you might need to copy them from
-# the 'build_output' stage or directly from your source.
-# Example: COPY --from=build_output /app/public ./public
-
 # Copy package.json if your start script or application requires it at runtime
-# (e.g., to read name, version, or other metadata).
 COPY package.json ./
 
 # Define the command to start the application.
-# This uses 'npm start', which executes 'react-router-serve ./build/server/index.js'
 CMD ["npm", "run", "start"]
 
 # Note on .env files:
