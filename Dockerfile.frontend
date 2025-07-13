@@ -18,7 +18,7 @@ ENV NODE_ENV=production
 
 # Navigate into the specific backend package for building and running
 WORKDIR /app/packages/frontend
-
+RUN bun install
 # Run the build command for the backend package
 # This assumes your 'backend' package has a 'build' script
 # If your global "bun run build" from root builds everything, you might put this higher up,
