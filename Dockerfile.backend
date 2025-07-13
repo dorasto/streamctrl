@@ -25,8 +25,8 @@ WORKDIR /app/packages/backend
 # but it's safer to build the specific app if the main CMD is for that app.
 RUN bun run build
 
-# Expose the application port (Hono often defaults to 3000, but 4000 is fine if configured)
-EXPOSE 4000
+# Expose the application port (backend runs on 5468)
+EXPOSE 5468
 
 # Start the Hono application from its 'dist' folder within the backend package
 # Assuming 'bun run build' in 'packages/backend' puts output in 'packages/backend/dist'
