@@ -10,6 +10,12 @@ import { Loader2 } from "lucide-react";
 import SortActions from "~/components/actions/sort";
 import { useLayoutData } from "~/utils/Context";
 import { useEffect } from "react";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "~/components/ui/resizable";
+import { Label } from "~/components/ui/label";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -111,19 +117,36 @@ export default function ObsPage() {
     );
   }
   return (
-    <div className="flex flex-col gap-3 min-h-full overflow-hidden">
-      {/* <Card>
-        <CardHeader>
-          <CardTitle>{profile?.name}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Badge variant={"secondary"}>
-            {profile?.active ? "Connected" : "Disconnected"}
-          </Badge>
-        </CardContent>
-      </Card> */}
-
-      <SortActions _actions={actions || []} mutate={mutate} />
-    </div>
+    <ResizablePanelGroup
+      direction="horizontal"
+      className="rounded-md h-full max-h-full overflow-hidden border"
+    >
+      <ResizablePanel defaultSize={20}>
+        <div className="flex flex-col w-full h-full min-w-full bg-card px-3">
+          <div className="border-b p-3 flex items-center gap-2 w-full">
+            <Label variant={"heading"}>Actions</Label>
+          </div>
+          <div className="flex-1 overflow-y-auto py-3">
+            <SortActions _actions={actions || []} mutate={mutate} />
+          </div>
+        </div>
+      </ResizablePanel>
+      <ResizableHandle />
+      <ResizablePanel defaultSize={50}>
+        <ResizablePanelGroup direction="vertical">
+          <ResizablePanel defaultSize={25}>
+            <div className="flex h-full items-center justify-center p-6">
+              <span className="font-semibold">Two</span>
+            </div>
+          </ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel defaultSize={75}>
+            <div className="flex h-full items-center justify-center p-6">
+              <span className="font-semibold">Three</span>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }

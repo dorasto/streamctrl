@@ -82,11 +82,9 @@ export default function SortActions({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="h-full min-h-full text-foreground">
+      <div className="text-foreground w-full min-w-full">
         <SortableContext items={actions} strategy={verticalListSortingStrategy}>
-          <div className="border rounded-md bg-card text-foreground p-3 h-full min-h-full overflow-auto flex flex-col gap-3">
-            <Label variant={"heading"}>Actions</Label>
-            <Separator />
+          <div className="text-foreground flex flex-col gap-2">
             {actions.map((item) => (
               <SortableItem
                 key={item.id}
