@@ -119,10 +119,10 @@ export default function ObsPage() {
   return (
     <ResizablePanelGroup
       direction="horizontal"
-      className="rounded-md h-full max-h-full overflow-hidden border"
+      className="rounded-md h-full max-h-full overflow-hidden gap-3"
     >
-      <ResizablePanel defaultSize={20}>
-        <div className="flex flex-col w-full h-full min-w-full bg-card px-3">
+      <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="">
+        <div className="flex flex-col w-full h-full min-w-full bg-card rounded-md border px-3">
           <div className="border-b p-3 flex items-center gap-2 w-full">
             <Label variant={"heading"}>Actions</Label>
           </div>
@@ -131,18 +131,28 @@ export default function ObsPage() {
           </div>
         </div>
       </ResizablePanel>
-      <ResizableHandle />
-      <ResizablePanel defaultSize={50}>
-        <ResizablePanelGroup direction="vertical">
-          <ResizablePanel defaultSize={25}>
-            <div className="flex h-full items-center justify-center p-6">
-              <span className="font-semibold">Two</span>
+      <ResizableHandle className="bg-border/0" />
+      <ResizablePanel defaultSize={80}>
+        <ResizablePanelGroup direction="vertical" className="gap-3">
+          <ResizablePanel defaultSize={25} minSize={10} maxSize={30}>
+            <div className="flex flex-col w-full h-full min-w-full bg-card rounded-md border px-3">
+              <div className="border-b p-3 flex items-center gap-2 w-full">
+                <Label variant={"heading"}>Triggers</Label>
+              </div>
+              <div className="flex-1 overflow-y-auto py-3">
+                {/* <SortActions _actions={actions || []} mutate={mutate} /> */}
+              </div>
             </div>
           </ResizablePanel>
-          <ResizableHandle />
+          <ResizableHandle className="bg-border/0" />
           <ResizablePanel defaultSize={75}>
-            <div className="flex h-full items-center justify-center p-6">
-              <span className="font-semibold">Three</span>
+            <div className="flex flex-col w-full h-full min-w-full bg-card rounded-md border px-3">
+              <div className="border-b p-3 flex items-center gap-2 w-full">
+                <Label variant={"heading"}>Events</Label>
+              </div>
+              <div className="flex-1 overflow-y-auto py-3">
+                {/* <SortActions _actions={actions || []} mutate={mutate} /> */}
+              </div>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
