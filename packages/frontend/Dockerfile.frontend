@@ -22,11 +22,11 @@ FROM base AS development_deps
 WORKDIR /app
 # Copy only package.json and pnpm-lock.yaml to leverage Docker's build cache.
 # If these files don't change, this layer (and subsequent ones) will be cached.
-COPY package.json pnpm-lock.yaml ./
+COPY package.json  ./
 
 # Install all dependencies (including devDependencies).
 # --frozen-lockfile ensures deterministic installs based on the lockfile.
-RUN pnpm i --frozen-lockfile
+RUN pnpm i
 
 # --- Stage 3: Build the application ---
 # This stage takes the development dependencies and the source code to produce the build output.
@@ -57,13 +57,13 @@ FROM base AS production_deps
 
 WORKDIR /app
 # Copy package.json and pnpm-lock.yaml for production dependency installation.
-COPY package.json pnpm-lock.yaml ./
+COPY package.json ./
 
 # Install only production dependencies.
 # --prod flag tells pnpm to exclude devDependencies.
 # --frozen-lockfile ensures deterministic installs.
 # --prefer-offline can speed up builds if packages are cached by pnpm.
-RUN pnpm i --prod --frozen-lockfile --prefer-offline
+RUN pnpm i --prod
 
 # --- Stage 5: Final production image (Runner) ---
 # This is the leanest image, containing only what's necessary to run the application.
