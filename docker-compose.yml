@@ -1,16 +1,16 @@
 services:
-  # nginx:
-  #   build:
-  #     context: . # Build context is the current directory
-  #     dockerfile: ./nginx/Dockerfile # Optional: If you need a custom Nginx image
-  #   container_name: streamctrl_nginx
-  #   ports:
-  #     - "80:80" # Map host port 80 to container port 80 (where Nginx listens)
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # Mount your custom Nginx config
-  #   depends_on:
-  #     - frontend # Nginx depends on frontend and backend being available
-  #     - backend
+  nginx:
+    build:
+      context: . # Build context is the current directory
+      dockerfile: ./nginx/Dockerfile # Optional: If you need a custom Nginx image
+    container_name: streamctrl_nginx
+    ports:
+      - "8749:80" # Map host port 80 to container port 80 (where Nginx listens)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # Mount your custom Nginx config
+    depends_on:
+      - frontend # Nginx depends on frontend and backend being available
+      # - backend
 
   # frontend:
   #   build:
