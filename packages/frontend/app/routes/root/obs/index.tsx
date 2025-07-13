@@ -111,8 +111,8 @@ export default function ObsPage() {
     );
   }
   return (
-    <div className="flex flex-col gap-3">
-      <Card>
+    <div className="flex flex-col gap-3 min-h-full overflow-hidden">
+      {/* <Card>
         <CardHeader>
           <CardTitle>{profile?.name}</CardTitle>
         </CardHeader>
@@ -121,7 +121,8 @@ export default function ObsPage() {
             {profile?.active ? "Connected" : "Disconnected"}
           </Badge>
         </CardContent>
-      </Card>
+      </Card> */}
+
       <SortActions _actions={actions || []} mutate={mutate} />
     </div>
   );

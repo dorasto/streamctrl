@@ -18,6 +18,8 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./item"; // Assuming './item' is where SortableItem is located
 import { useLayoutData } from "~/utils/Context";
+import { Label } from "../ui/label";
+import { Separator } from "../ui/separator";
 
 export default function SortActions({
   _actions,
@@ -80,22 +82,11 @@ export default function SortActions({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div
-        style={{
-          padding: "var(--spacing, 20px)",
-          backgroundColor: "var(--background)",
-          color: "var(--foreground)",
-        }}
-      >
+      <div className="h-full min-h-full text-foreground">
         <SortableContext items={actions} strategy={verticalListSortingStrategy}>
-          <div
-            style={{
-              border: "1px dashed var(--border)",
-              padding: "var(--spacing, 10px)",
-              borderRadius: "var(--radius-sm, 4px)",
-              backgroundColor: "var(--card)",
-            }}
-          >
+          <div className="border rounded-md bg-card text-foreground p-3 h-full min-h-full overflow-auto flex flex-col gap-3">
+            <Label variant={"heading"}>Actions</Label>
+            <Separator />
             {actions.map((item) => (
               <SortableItem
                 key={item.id}
