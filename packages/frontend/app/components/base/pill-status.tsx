@@ -34,10 +34,7 @@ export default function PillBar() {
           )}{" "}
           Websocket
         </PillStatus>
-        {WSStatus}
-      </Pill>
-      <Pill variant={"outline"} className="">
-        <PillStatus>
+        <PillStatus className="border-r-0">
           {OBSStatus === "Connected" && (
             <CheckCircleIcon className={"text-green-500"} size={12} />
           )}
@@ -46,9 +43,9 @@ export default function PillBar() {
           )}
           OBS
         </PillStatus>
-        {OBSStatus}
       </Pill>
-      <Pill variant={"outline"}>
+
+      <Pill variant={"outline"} className="max-h-[27.6px] pr-0">
         <PillStatus>
           <CheckCircleIcon className="text-green-500" size={12} />
           Profile
@@ -66,7 +63,7 @@ export default function PillBar() {
             }
           }}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] text-xs ">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
