@@ -28,7 +28,7 @@ const useWebSocket = () => {
         setWSProfile("");
         const wsUrl = import.meta.env.VITE_WS_URL;
         console.log("🚀 ~ connectWebSocket ~ wsUrl:", wsUrl);
-        webSocket = new WebSocket(import.meta.env.VITE_WS_URL + "/ws");
+        webSocket = new WebSocket(wsUrl || "/ws");
         webSocket.onopen = () => {
           console.log("Connected to Hono OBS Relay WebSocket!");
           setWSStatus("Connected");
