@@ -15,16 +15,6 @@ RUN bun install
 
 # Change working directory into the frontend package
 WORKDIR /app/packages/frontend
-# --- Declare build arguments from docker-compose.yml here ---
-ARG VITE_WS_URL
-ARG VITE_API_URL
-# Declare any other ARGs passed from docker-compose.yml
-
-# Make them available as ENV vars during the build process
-# Frontend bundlers like Vite look for these in the build environment
-ENV VITE_WS_URL=${VITE_WS_URL}
-ENV VITE_API_URL=${VITE_API_URL}
-ENV NODE_ENV=production
 
 # Run the build script for the frontend package
 RUN bun run build
