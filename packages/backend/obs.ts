@@ -229,6 +229,6 @@ function ActionRunnerTest(actions: any[], message: any) {
     sendObsRequestToBackend(e.type, {
       ...e.settings,
       sceneItemEnabled: message.d.eventData.sceneItemEnabled,
-    });
+    }).catch(console.warn);
   });
 }

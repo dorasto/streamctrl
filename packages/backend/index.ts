@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createBunWebSocket } from "hono/bun";
-//@ts-expect-error not sure why im getting this
 import type { ServerWebSocket } from "bun";
 import { serveStatic } from "hono/serve-static";
 import WebSocket from "ws"; // This is the 'ws' npm package's WebSocket
@@ -57,7 +56,10 @@ app.use("/api/*", async (c, next) => {
 });
 // Store connected frontend WebSocket clients
 // export const frontendClients = new Set<WSContext<WebSocket>>();
-export const frontendClients = new Map<string, WSContext<WebSocket>>(); // Key: clientId, Value: WebSocket
+export const frontendClients = new Map<
+  string,
+  WSContext<ServerWebSocket<undefined>>
+>(); // Key: clientId, Value: WebSocket
 db.select()
   .from(schema.profile)
   .then(async (data) => {
@@ -116,7 +118,7 @@ export async function sendObsRequestToBackend(
           if (response.d.requestStatus.result) {
             resolve(response.d.responseData);
           } else {
-            reject(
+            return reject(
               new Error(
                 response.d.requestStatus.comment || "OBS request failed."
               )
@@ -350,7 +352,7 @@ app.get(
                 sendObsRequestToBackend(e.type, {
                   ...e.settings,
                   sceneItemEnabled: false,
-                });
+                }).catch(console.warn);
               });
             }
           }

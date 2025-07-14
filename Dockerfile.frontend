@@ -1,33 +1,54 @@
-# Use the Bun image as the base image
-FROM oven/bun:latest
+# Stage 1: Build the frontend application
+FROM oven/bun:latest AS frontend_builder
 
-# Set the working directory in the container to the workspace root
+# Set the overall project root as the initial working directory
 WORKDIR /app
-
-# Copy package.json, bun.lockb, and the packages directory
-# This ensures the entire workspace structure is available
-COPY package.json bun.lock ./
-COPY packages packages/
-
-# Install dependencies for the entire workspace
-# This will install dependencies for all packages within 'packages/*'
-RUN bun install
-
-# Set the production environment
+ARG VITE_WS_URL
+ARG VITE_API_URL
+ENV VITE_WS_URL=${VITE_WS_URL}
+ENV VITE_API_URL=${VITE_API_URL}
 ENV NODE_ENV=production
 
-# Navigate into the specific backend package for building and running
-WORKDIR /app/packages/frontend
+# Copy workspace configuration files
+COPY package.json bun.lock ./
+
+# Copy the entire packages directory to maintain workspace structure
+COPY packages/ packages/
+
+# Install dependencies for the entire workspace
 RUN bun install
-# Run the build command for the backend package
-# This assumes your 'backend' package has a 'build' script
-# If your global "bun run build" from root builds everything, you might put this higher up,
-# but it's safer to build the specific app if the main CMD is for that app.
+
+# Change working directory into the frontend package
+WORKDIR /app/packages/frontend
+
+# Run the build script for the frontend package
 RUN bun run build
 
-# Expose the application port (Hono often defaults to 3000, but 4000 is fine if configured)
+
+# Stage 2: Create the final production Bun image for the frontend
+FROM oven/bun:latest AS production_frontend
+
+# Set the overall project root as the initial working directory
+WORKDIR /app
+
+# Copy workspace configuration
+COPY --from=frontend_builder /app/package.json ./
+COPY --from=frontend_builder /app/bun.lock ./
+
+# Copy the packages directory structure
+COPY --from=frontend_builder /app/packages/ packages/
+
+# Navigate into the frontend package
+WORKDIR /app/packages/frontend
+
+# Install production dependencies
+RUN bun install --production
+
+# Expose the application port
 EXPOSE 3000
 
-# Start the Hono application from its 'dist' folder within the backend package
-# Assuming 'bun run build' in 'packages/backend' puts output in 'packages/backend/dist'
-CMD ["bun", "start"]
+# Set production environment
+ENV NODE_ENV=production
+
+# Command to start the frontend application using bun
+CMD ["bun", "run", "start"]
