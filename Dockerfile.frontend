@@ -1,49 +1,42 @@
 # Stage 1: Build the frontend application
 FROM oven/bun:latest AS frontend_builder
 
-# Set the overall project root as the initial working directory
 WORKDIR /app
 
-# Copy workspace configuration files
+# --- Declare build arguments from docker-compose.yml here ---
+ARG VITE_WS_URL
+ARG VITE_API_URL
+# Declare any other ARGs passed from docker-compose.yml
+
+# Make them available as ENV vars during the build process
+# Frontend bundlers like Vite look for these in the build environment
+ENV VITE_WS_URL=${VITE_WS_URL}
+ENV VITE_API_URL=${VITE_API_URL}
+ENV NODE_ENV=production
+
 COPY package.json bun.lock ./
-
-# Copy the entire packages directory to maintain workspace structure
 COPY packages/ packages/
-
-# Install dependencies for the entire workspace
 RUN bun install
 
-# Change working directory into the frontend package
 WORKDIR /app/packages/frontend
-
-# Run the build script for the frontend package
-RUN bun run build
+RUN bun run build # This command will now have VITE_WS_URL and VITE_API_URL in its environment
 
 
 # Stage 2: Create the final production Bun image for the frontend
 FROM oven/bun:latest AS production_frontend
 
-# Set the overall project root as the initial working directory
 WORKDIR /app
 
-# Copy workspace configuration
 COPY --from=frontend_builder /app/package.json ./
 COPY --from=frontend_builder /app/bun.lock ./
-
-# Copy the packages directory structure
 COPY --from=frontend_builder /app/packages/ packages/
 
-# Navigate into the frontend package
 WORKDIR /app/packages/frontend
 
-# Install production dependencies
 RUN bun install --production
 
-# Expose the application port
 EXPOSE 3000
 
-# Set production environment
-ENV NODE_ENV=production
+ENV NODE_ENV=production 
 
-# Command to start the frontend application using bun
 CMD ["bun", "run", "start"]
