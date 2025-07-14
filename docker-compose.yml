@@ -3,10 +3,10 @@ services:
     # Build the Nginx image using the custom Dockerfile
     build:
       context: .
-      dockerfile: ./Dockerfile.nginx
+      dockerfile: ./Dockerfile.nginx # Path to your Nginx Dockerfile
     container_name: streamctrl_nginx
     ports:
-      - "4575:80" # Map host port 4575 to container port 80 (Nginx listening)
+      - "4575:80" # Map host port 80 to container port 80
     depends_on:
       - frontend # Ensure frontend is up before Nginx tries to proxy to it
       - backend # Ensure backend is up before Nginx tries to proxy to it
@@ -14,43 +14,37 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ./Dockerfile.frontend
-      # --- IMPORTANT: Pass build-time environment variables here ---
-      args:
-        # These ARG variables must be declared in Dockerfile.frontend's build stage
-        VITE_WS_URL: ${VITE_WS_URL} # Make sure this resolves to a full URL accessible by the browser (via Nginx)
-        VITE_API_URL: ${VITE_API_URL} # Make sure this resolves to a full URL accessible by the browser (via Nginx)
-        # Add any other VITE_ or build-time prefixed variables here
-        # Example: PUBLIC_FEATURE_FLAG: "true"
+      dockerfile: ./Dockerfile.frontend # Path to your frontend Dockerfile
     container_name: streamctrl_frontend
-    # Keeping this for debugging direct access from host, remove if not needed in production
+    # No ports mapping needed if only Nginx accesses it directly in Docker network
+    # You might expose it for local debugging, but not in production for Nginx to handle.
     ports:
-      - "4576:3000"
+      - "4576:3000" # Map host port 80 to container port 80
     expose:
-      - "3000" # Expose port 3000 to other containers within the Docker network (e.g., Nginx)
+      - "3000" # Expose port 5173 to other containers within the Docker network
     environment:
-      # --- These are RUNTIME environment variables for the Bun process ---
-      # Only include variables here if your `bun run start` command (the server)
-      # needs them at runtime.
+      # Pass environment variables to your React app if needed (e.g., API_BASE_URL)
+      # However, for proxied requests, the client-side code will still use relative paths
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
       TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID}
       TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET}
+      VITE_WS_URL: ${VITE_WS_URL}
+      VITE_API_URL: ${VITE_API_URL}
     depends_on:
-      - backend # Frontend might depend on backend if it makes direct calls or for health checks
+      - backend # Frontend might depend on backend if it makes direct calls (unlikely with this setup)
 
   backend:
     build:
       context: .
-      dockerfile: ./Dockerfile.backend
+      dockerfile: ./Dockerfile.backend # Path to your backend Dockerfile
     container_name: streamctrl_backend
     expose:
-      - "5468" # Expose port 5468 to other containers (like Nginx)
+      - "5468" # Expose port 5468 to other containers
     environment:
-      # --- These are RUNTIME environment variables for the Backend process ---
+      # Any environment variables for your backend
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
       TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID}
       TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET}
-      # Other backend-specific runtime variables
     # Add database or other dependencies here
