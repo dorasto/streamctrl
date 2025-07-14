@@ -19,7 +19,7 @@ COPY packages/ packages/
 RUN bun install
 
 WORKDIR /app/packages/frontend
-RUN bun run build # This command will now have VITE_WS_URL and VITE_API_URL in its environment
+RUN bun run build
 
 
 # Stage 2: Create the final production Bun image for the frontend
