@@ -18,6 +18,8 @@ services:
     container_name: streamctrl_frontend
     # No ports mapping needed if only Nginx accesses it directly in Docker network
     # You might expose it for local debugging, but not in production for Nginx to handle.
+    ports:
+      - "4576:3000" # Map host port 80 to container port 80
     expose:
       - "3000" # Expose port 5173 to other containers within the Docker network
     environment:
