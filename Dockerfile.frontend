@@ -3,6 +3,11 @@ FROM oven/bun:latest AS frontend_builder
 
 # Set the overall project root as the initial working directory
 WORKDIR /app
+ARG VITE_WS_URL
+ARG VITE_API_URL
+ENV VITE_WS_URL=${VITE_WS_URL}
+ENV VITE_API_URL=${VITE_API_URL}
+ENV NODE_ENV=production
 
 # Copy workspace configuration files
 COPY package.json bun.lock ./
