@@ -2,15 +2,11 @@ import WebSocket from "ws"; // This is the 'ws' npm package's WebSocket
 import { createHash } from "crypto";
 import { actions, frontendClients, sendObsRequestToBackend } from ".";
 import * as schema from "db/schema/index";
-import { db } from "db";
-import { arrayOverlaps, sql } from "drizzle-orm";
 // OBS WebSocket connection
 export let obsWs: WebSocket | null = null;
 export let obsWsConnected: boolean = false; // Track OBS connection status more explicitly
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null; // Use setTimeout for single reconnect attempts
-// --- Dummy Database / Profile Management ---];
 export type IProfile = typeof schema.profile.$inferSelect;
-
 export let currentObsProfile: any = null; // Currently active OBS profile
 
 // Function to compute the SHA256 hash
@@ -116,7 +112,7 @@ export const connectToObs = (profile: IProfile) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(
             JSON.stringify({
-              type: "relay_obs_status", // Explicitly from relay, about OBS status
+              type: "OBS_CONNECTION_STATUS", // Explicitly from relay, about OBS status
               data: {
                 connection: "identified",
                 profile: {
@@ -136,7 +132,7 @@ export const connectToObs = (profile: IProfile) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(
           JSON.stringify({
-            type: "obs_message", // Clearly indicates this is a raw OBS message
+            type: "OBS_MESSAGE", // Clearly indicates this is a raw OBS message
             data: parsedMessage, // The original parsed OBS message
           })
         );
@@ -155,7 +151,7 @@ export const connectToObs = (profile: IProfile) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(
           JSON.stringify({
-            type: "relay_obs_status",
+            type: "OBS_CONNECTION_STATUS",
             data: {
               connection: "disconnected",
               reason: "error",
@@ -188,7 +184,7 @@ export const connectToObs = (profile: IProfile) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(
           JSON.stringify({
-            type: "relay_obs_status",
+            type: "OBS_CONNECTION_STATUS",
             data: {
               connection: "disconnected",
               reason: "closed",

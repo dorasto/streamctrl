@@ -183,7 +183,7 @@ app.get(
         if (!session) {
           ws.send(
             JSON.stringify({
-              type: "relay_connection_status", // Relay's own connection to frontend
+              type: "RELAY_CONNECTION_STATUS", // Relay's own connection to frontend
               data: { status: "Auth Failed" },
             })
           );
@@ -196,7 +196,7 @@ app.get(
         // On new frontend connection, send initial relay status and current OBS status
         ws.send(
           JSON.stringify({
-            type: "relay_connection_status", // Relay's own connection to frontend
+            type: "RELAY_CONNECTION_STATUS", // Relay's own connection to frontend
             data: {
               status: "connected",
               clientId: clientId,
@@ -211,7 +211,7 @@ app.get(
         // Also send current OBS status via relay_obs_status type
         ws.send(
           JSON.stringify({
-            type: "relay_obs_status",
+            type: "OBS_CONNECTION_STATUS",
             data: {
               connection: obsWsConnected ? "identified" : "disconnected", // Current OBS state
               profile: {
@@ -223,16 +223,15 @@ app.get(
           })
         );
         const profilesForFrontend = dbObsProfiles.map(
-          ({ id, name, connection, active }) => ({
+          ({ id, name, active }) => ({
             id,
             name,
-            ip: connection.ip,
             active,
           })
         );
         ws.send(
           JSON.stringify({
-            type: "relay_connection_profiles", // Relay's own connection to frontend
+            type: "RELAY_PROFILE_LIST", // Relay's own connection to frontend
             profiles: profilesForFrontend,
           })
         );
@@ -306,10 +305,9 @@ app.get(
                     );
                     connectToObs(active);
                     const profilesForFrontend = dbObsProfiles.map(
-                      ({ id, name, connection, active }) => ({
+                      ({ id, name, active }) => ({
                         id,
                         name,
-                        ip: connection.ip,
                         active,
                       })
                     );
@@ -317,7 +315,7 @@ app.get(
                       if (client.readyState === WebSocket.OPEN) {
                         client.send(
                           JSON.stringify({
-                            type: "relay_connection_profiles", // Relay's own connection to frontend
+                            type: "RELAY_PROFILE_LIST", // Relay's own connection to frontend
                             profiles: profilesForFrontend,
                           })
                         );

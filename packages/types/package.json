@@ -1,0 +1,11 @@
+{
+    "name": "types",
+    "type": "module",
+    "dependencies": {
+        "frontend": "workspace:*",
+        "backend": "workspace:*",
+        "db": "workspace:*",
+        "drizzle-orm": "^0.44.2",
+        "pg": "^8.16.3"
+    }
+}

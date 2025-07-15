@@ -46,7 +46,7 @@ apiRoutes.patch("/actions", async (c) => {
       if (client.readyState === WebSocket.OPEN && client_id !== id) {
         client.send(
           JSON.stringify({
-            type: "relay_connection_update_actions", // Relay's own connection to frontend
+            type: "RELAY_CONNECTION_UPDATE_ACTIONS", // Relay's own connection to frontend
           })
         );
       }

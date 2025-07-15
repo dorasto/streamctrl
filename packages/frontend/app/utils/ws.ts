@@ -1,110 +1,120 @@
 import { useEffect, useState } from "react";
 import { useStateManagement } from "~/hooks/useStateManagement";
+import type {
+  RelayProfileListUpdateMessage,
+  WebSocketMessage,
+  WebSocketUnknownMessageStructure,
+} from "types/ws";
+const wsUrl = import.meta.env.VITE_WS_URL;
 let webSocket: WebSocket | null = null;
-let reconnectTimeout: NodeJS.Timeout | null = null;
+
 const useWebSocket = () => {
   const [ws, setWs] = useState<WebSocket | null>(null);
-  const { setValue: setWSStatus } = useStateManagement<any>(
+  const { setValue: setWSStatus } = useStateManagement<string>(
     "ws-status",
     "Disconnected"
   );
-  const { setValue: setWSClientId } = useStateManagement<any>(
+  const { setValue: setWSClientId } = useStateManagement<string>(
     "ws-client-id",
     ""
   );
-  const { setValue: setOBSStatus } = useStateManagement<any>(
+  const { setValue: setOBSStatus } = useStateManagement<string>(
     "ws-obs-status",
     "Disconnected"
   );
   const { setValue: setWSProfile } = useStateManagement<any>("ws-profile", "");
-  const { setValue: setWSProfiles } = useStateManagement<any[]>(
-    "ws-profiles",
-    []
-  );
+  const { setValue: setWSProfiles } = useStateManagement<
+    RelayProfileListUpdateMessage["profiles"]
+  >("ws-profiles", []);
+
   useEffect(() => {
     const connectWebSocket = () => {
       if (!webSocket) {
-        setWSStatus("Connecting"); // Set status to connecting when attempting to connect
+        setWSStatus("Connecting");
         setWSProfile("");
-        const wsUrl = import.meta.env.VITE_WS_URL;
         webSocket = new WebSocket(wsUrl || "/ws");
+
         webSocket.onopen = () => {
           console.log("Connected to Hono OBS Relay WebSocket!");
           setWSStatus("Connected");
           setWs(webSocket);
-          if (reconnectTimeout) {
-            clearTimeout(reconnectTimeout);
-            reconnectTimeout = null;
-          }
         };
-        webSocket.onmessage = (e) => {
-          let wsMessage;
+
+        webSocket.onmessage = (event) => {
+          let wsMessage: WebSocketMessage;
           try {
-            wsMessage = JSON.parse(e.data);
+            wsMessage = JSON.parse(event.data);
           } catch (e) {
             console.error("Failed to parse WebSocket message:", e);
             return;
           }
-          console.log(
-            "🚀 ~ useWebSocket ~ onmessage ~ wsMessage:",
-            JSON.stringify(wsMessage, null, 2)
-          );
-          if (wsMessage.type === "relay_connection_status") {
-            setWSProfile(wsMessage.data.profile);
-            setWSClientId(wsMessage.data.clientId);
-          }
-          if (wsMessage.type === "relay_connection_profiles") {
-            setWSProfiles(wsMessage.profiles);
-          }
-          if (wsMessage.type === "relay_obs_status") {
-            if (wsMessage.data.comment === "Switching profiles") {
-              setWSProfile("Switching profiles...");
-            }
-            if (wsMessage.data.connection === "identified") {
-              setOBSStatus("Connected");
+
+          switch (wsMessage.type) {
+            case "RELAY_CONNECTION_STATUS":
               setWSProfile(wsMessage.data.profile);
-            } else if (wsMessage.data.connection === "disconnected") {
-              setOBSStatus("Disconnected");
-            }
+              setWSClientId(wsMessage.data.clientId);
+              break;
+            case "RELAY_PROFILE_LIST":
+              if (wsMessage.profiles) {
+                setWSProfiles(wsMessage.profiles);
+              }
+              break;
+            case "OBS_CONNECTION_STATUS": // Changed to OBS_CONNECTION_STATUS
+              if (wsMessage.data.comment === "Switching profiles") {
+                setWSProfile("Switching profiles...");
+              }
+              if (wsMessage.data.connection === "identified") {
+                setOBSStatus("Connected");
+                setWSProfile(wsMessage.data.profile!);
+              } else if (wsMessage.data.connection === "disconnected") {
+                setOBSStatus("Disconnected");
+              }
+              break;
+            default:
+              const unknownMessage =
+                wsMessage as WebSocketUnknownMessageStructure;
+              console.warn(
+                "Unknown WebSocket message type:",
+                unknownMessage.type
+              );
           }
         };
+
         webSocket.onclose = () => {
           webSocket = null;
           console.log("WebSocket disconnected. Attempting to reconnect...");
           setWs(null);
-          setWSStatus("Reconnecting"); // Change status to "Reconnecting"
+          setWSStatus("Reconnecting");
           setWSProfile("");
           setOBSStatus("Disconnected");
-          if (!webSocket) {
-            connectWebSocket();
-          }
+          connectWebSocket();
         };
 
         webSocket.onerror = (error) => {
           console.error("WebSocket error:", error);
           if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-            webSocket.close(); // Close the connection to trigger onclose and reconnect
+            webSocket.close();
           }
           webSocket = null;
           setWs(null);
-          setWSStatus("Disconnected"); // Change status to "Reconnecting"
+          setWSStatus("Disconnected");
           setWSProfile("");
           setOBSStatus("Disconnected");
         };
       }
     };
-    setTimeout(() => {
+
+    const timeoutId = setTimeout(() => {
       connectWebSocket();
     }, 100);
-    // Clean up WebSocket connection and timeout when the component unmounts
+
     return () => {
       console.log("Clearing WebSocket on unmount.");
-      webSocket?.close(); // This will trigger onclose, which cleans the map
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
+      clearTimeout(timeoutId);
+      webSocket?.close();
     };
   }, []);
+
   return ws;
 };
 

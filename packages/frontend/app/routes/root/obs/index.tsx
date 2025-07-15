@@ -23,6 +23,7 @@ import {
 } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import type { WebSocketMessage } from "types/ws";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -94,14 +95,14 @@ export default function ObsPage() {
       ws.addEventListener(
         "message",
         (e) => {
-          let wsMessage;
+          let wsMessage: WebSocketMessage;
           try {
             wsMessage = JSON.parse(e.data);
           } catch (e) {
             console.error("Failed to parse WebSocket message:", e);
             return;
           }
-          if (wsMessage.type === "relay_connection_update_actions") {
+          if (wsMessage.type === "RELAY_CONNECTION_UPDATE_ACTIONS") {
             refetchActions();
           }
         },
